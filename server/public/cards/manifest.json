@@ -1,0 +1,82 @@
+[
+  {
+    "imageId": "card-001",
+    "label": "crystal dragon"
+  },
+  {
+    "imageId": "card-002",
+    "label": "golden key"
+  },
+  {
+    "imageId": "card-003",
+    "label": "mushroom house"
+  },
+  {
+    "imageId": "card-004",
+    "label": "sleeping moon"
+  },
+  {
+    "imageId": "card-005",
+    "label": "baby phoenix"
+  },
+  {
+    "imageId": "card-006",
+    "label": "friendly ghost"
+  },
+  {
+    "imageId": "card-007",
+    "label": "wizard hat"
+  },
+  {
+    "imageId": "card-008",
+    "label": "potion bottle"
+  },
+  {
+    "imageId": "card-009",
+    "label": "enchanted lantern"
+  },
+  {
+    "imageId": "card-010",
+    "label": "winged cat"
+  },
+  {
+    "imageId": "card-011",
+    "label": "treasure chest"
+  },
+  {
+    "imageId": "card-012",
+    "label": "magical compass"
+  },
+  {
+    "imageId": "card-013",
+    "label": "enchanted mirror"
+  },
+  {
+    "imageId": "card-014",
+    "label": "fairy"
+  },
+  {
+    "imageId": "card-015",
+    "label": "crystal ball"
+  },
+  {
+    "imageId": "card-016",
+    "label": "magical quill"
+  },
+  {
+    "imageId": "card-017",
+    "label": "sleeping dragon"
+  },
+  {
+    "imageId": "card-018",
+    "label": "magical clock"
+  },
+  {
+    "imageId": "card-019",
+    "label": "unicorn horn"
+  },
+  {
+    "imageId": "card-020",
+    "label": "enchanted rose"
+  }
+]
