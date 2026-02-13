@@ -13,8 +13,8 @@ export function useGame() {
   const [imageExtension, setImageExtension] = useState('svg');
   const [matchedCardIds, setMatchedCardIds] = useState<number[]>([]); // cards that just matched (for glow)
   const [stillYourTurn, setStillYourTurn] = useState(false); // true briefly after you match
-  const stillTurnTimerRef = useRef<ReturnType<typeof setTimeout>>();
-  const matchGlowTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const stillTurnTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const matchGlowTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const myPlayerIdRef = useRef<string | null>(null);
 
   useEffect(() => {
