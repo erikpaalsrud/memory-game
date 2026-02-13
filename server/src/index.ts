@@ -10,21 +10,41 @@ import { GameManager } from './game/GameManager.js';
 import { setupSocketHandlers } from './socket/handlers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isProd = process.env.NODE_ENV === 'production';
+const port = parseInt(process.env.PORT || String(SERVER_PORT), 10);
 
 const app = express();
 const httpServer = createServer(app);
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
-  cors: {
-    origin: [`http://localhost:${CLIENT_PORT}`],
-    methods: ['GET', 'POST'],
-  },
+  cors: isProd
+    ? {}
+    : {
+        origin: [`http://localhost:${CLIENT_PORT}`],
+        methods: ['GET', 'POST'],
+      },
 });
 
-app.use(cors());
+if (!isProd) {
+  app.use(cors());
+}
 
 // Serve card images as static files
 app.use('/cards', express.static(path.join(__dirname, '../public/cards')));
+
+// In production, serve the built Vite client
+if (isProd) {
+  const clientDist = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientDist));
+
+  // SPA fallback — serve index.html for any non-API/non-asset routes
+  app.get('*', (_req, res, next) => {
+    if (_req.path.startsWith('/api') || _req.path.startsWith('/cards') || _req.path.startsWith('/socket.io')) {
+      return next();
+    }
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
 
 // Initialize game manager and socket handlers
 const gameManager = new GameManager();
@@ -39,6 +59,6 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-httpServer.listen(SERVER_PORT, () => {
-  console.log(`Memory Game server running on http://localhost:${SERVER_PORT}`);
+httpServer.listen(port, () => {
+  console.log(`Memory Game server running on port ${port} (${isProd ? 'production' : 'development'})`);
 });
