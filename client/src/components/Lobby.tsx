@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { MememoryTitle } from './MememoryTitle';
 
 interface Props {
   onJoin: (name: string) => void;
@@ -63,22 +64,12 @@ export function Lobby({ onJoin, onSpectate, isConnected }: Props) {
       </div>
 
       <div className="lobby-hero">
-        <div className="lobby-emoji-row" aria-hidden>
-          <span className="hero-emoji he-1">🃏</span>
-          <span className="hero-emoji he-2">✨</span>
+        <div className="lobby-topsi-wrapper">
+          <div className="topsi-speech-bubble">Hi!</div>
+          <img src="/mascot/topsi_happy.png" className="lobby-topsi" alt="Topsi" draggable={false} />
         </div>
-        <h1 className="lobby-title">
-          {'Mememory'.split('').map((letter, i) => (
-            <span key={i} className="title-letter" style={{ animationDelay: `${i * 0.08}s` }}>
-              {letter}
-            </span>
-          ))}
-        </h1>
+        <MememoryTitle size="large" animate />
         <p className="lobby-tagline">The classic card game — now multiplayer</p>
-        <div className="lobby-emoji-row" aria-hidden>
-          <span className="hero-emoji he-3">🧠</span>
-          <span className="hero-emoji he-4">⭐</span>
-        </div>
       </div>
 
       <div className="lobby-card">

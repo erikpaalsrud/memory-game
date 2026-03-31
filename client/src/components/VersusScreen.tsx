@@ -6,9 +6,11 @@ interface Props {
   myPlayerId: string;
 }
 
+// Preload coin rotation frames (16 frames from 3D rendered sprite sheet)
+const COIN_FRAMES = Array.from({ length: 16 }, (_, i) => `/gfx/coin_frames/coin_${i}.png`);
+
 // Preload lightning frames
 const LIGHTNING_FRAMES = Array.from({ length: 20 }, (_, i) => {
-  // Files are named lighteningball_1_20_1 through lighteningball_1_20_20
   return `/gfx/lightning_lighteningball_1_20_${i + 1}.png`;
 });
 
@@ -67,10 +69,10 @@ export function VersusScreen({ gameState, myPlayerId }: Props) {
 
   return (
     <div className="versus-screen">
-      {/* Impact flash on clash */}
+      {/* Full-viewport impact flash */}
       <div className="vs-flash" aria-hidden />
 
-      {/* Diagonal slash lines with real slash GFX */}
+      {/* Diagonal slash GFX */}
       <div className="vs-slashes" aria-hidden>
         <img src="/gfx/slash_02.png" className="vs-slash-img slash-img-1" alt="" />
         <img src="/gfx/slash_03.png" className="vs-slash-img slash-img-2" alt="" />
@@ -93,7 +95,7 @@ export function VersusScreen({ gameState, myPlayerId }: Props) {
       {/* Flare behind VS */}
       <img src="/gfx/flare_01.png" className="vs-flare" alt="" aria-hidden />
 
-      {/* Energy ball aura behind VS text */}
+      {/* Energy aura behind VS */}
       <div className="vs-energy" aria-hidden>
         <SpriteAnimation frames={ENERGY_FRAMES} fps={24} className="vs-energy-sprite" delay={400} />
       </div>
@@ -106,8 +108,6 @@ export function VersusScreen({ gameState, myPlayerId }: Props) {
         <img src="/gfx/star_04.png" className="vs-gfx-particle vp-4" alt="" />
         <img src="/gfx/star_06.png" className="vs-gfx-particle vp-5" alt="" />
         <img src="/gfx/star_08.png" className="vs-gfx-particle vp-6" alt="" />
-        <img src="/gfx/magic_04.png" className="vs-gfx-particle vp-7" alt="" />
-        <img src="/gfx/magic_05.png" className="vs-gfx-particle vp-8" alt="" />
       </div>
 
       {/* Player names crash in from sides */}
@@ -122,20 +122,8 @@ export function VersusScreen({ gameState, myPlayerId }: Props) {
           <div className="vs-lightning" aria-hidden>
             <SpriteAnimation frames={LIGHTNING_FRAMES} fps={20} className="vs-lightning-sprite" delay={450} />
           </div>
-          <span className="vs-text">VS</span>
-          {/* Impact sparks */}
-          <div className="vs-sparks" aria-hidden>
-            {Array.from({ length: 8 }, (_, i) => (
-              <span
-                key={i}
-                className="vs-spark"
-                style={{
-                  '--spark-angle': `${i * 45}deg`,
-                  '--spark-dist': `${40 + (i % 3) * 20}px`,
-                } as React.CSSProperties}
-              />
-            ))}
-          </div>
+          {/* Comic-style VS graphic */}
+          <img src="/gfx/vs_comic_1.png" className="vs-graphic" alt="VS" />
         </div>
 
         <div className={`vs-player vs-right ${p2.id === myPlayerId ? 'is-me' : ''}`}>
@@ -144,12 +132,14 @@ export function VersusScreen({ gameState, myPlayerId }: Props) {
         </div>
       </div>
 
-      {/* Coin toss */}
+      {/* 3D coin toss — sprite-based rotation */}
       <div className="versus-coin-section">
-        <div className="versus-coin">
-          <div className="coin-face coin-front">?</div>
-          <div className="coin-face coin-back-side">!</div>
-        </div>
+        <SpriteAnimation
+          frames={COIN_FRAMES}
+          fps={24}
+          className="versus-coin-sprite"
+          delay={1200}
+        />
       </div>
 
       <div className="versus-result">

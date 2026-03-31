@@ -23,9 +23,10 @@ const OUTPUT_DIR = path.resolve(__dirname, '../server/public/mascot');
 const BASE = `A cute cartoon dolphin in pixel art style, 64x64 pixels aesthetic.
 The dolphin is soft blue/periwinkle colored, round and chibi-proportioned with a big head,
 big expressive eyes, a small snout with a friendly beak, and tiny flippers.
-Dark background (#0f0f1a). The style is chunky pixel art with visible pixels,
-like a retro game character. Keep it simple, cute, and consistent across variations.
-The dolphin is the mascot of a memory card game called Mememory.`;
+TRANSPARENT BACKGROUND — no background color at all, fully transparent PNG.
+The style is chunky pixel art with visible pixels, like a retro game character.
+Keep it simple, cute, and consistent across variations.
+IMPORTANT: Do NOT include any text, words, letters, or labels anywhere in the image.`;
 
 // Mood variations
 const MOODS: Record<string, string> = {
