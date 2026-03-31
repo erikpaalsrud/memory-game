@@ -629,6 +629,131 @@ button:disabled {
   padding: 8px;
 }
 
+/* === Versus Screen === */
+
+.versus-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 40px 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.versus-players {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin-bottom: 40px;
+}
+
+.versus-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.versus-p1 {
+  animation: slideFromLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.versus-p2 {
+  animation: slideFromRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+@keyframes slideFromLeft {
+  from { opacity: 0; transform: translateX(-60px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideFromRight {
+  from { opacity: 0; transform: translateX(60px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.versus-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.versus-player.is-me .versus-name {
+  color: var(--accent);
+}
+
+.versus-you {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.versus-vs {
+  animation: vsAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+}
+
+.versus-vs span {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #ff3333;
+  text-shadow: 0 0 20px rgba(255, 50, 50, 0.4);
+  letter-spacing: 4px;
+}
+
+@keyframes vsAppear {
+  from { opacity: 0; transform: scale(2.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.versus-coin-section {
+  margin-bottom: 20px;
+  animation: fadeIn 0.3s ease-out 1s both;
+}
+
+.versus-coin {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: coinSpin 2s cubic-bezier(0.2, 0.8, 0.3, 1) 1.2s both;
+}
+
+.versus-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: fadeIn 0.5s ease-out 2.8s both;
+}
+
+.versus-starter-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #ffd700;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+}
+
+.versus-starts-text {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.versus-ready {
+  margin-top: 24px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  animation: readyPulse 1s ease-in-out 3.5s both;
+}
+
+@keyframes readyPulse {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
 /* === Responsive === */
 
 @media (max-width: 640px) {

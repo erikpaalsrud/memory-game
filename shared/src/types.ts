@@ -60,6 +60,7 @@ export interface ClientToServerEvents {
   'player:flip-card': (data: { cardId: number }) => void;
   'player:leave': () => void;
   'player:play-again': () => void;
+  'player:rematch': () => void;
 }
 
 export interface ServerToClientEvents {
@@ -72,6 +73,7 @@ export interface ServerToClientEvents {
   'game:turn-change': (data: { currentTurnPlayerId: string }) => void;
   'game:over': (data: { gameState: ClientGameState }) => void;
   'game:sudden-death': (data: { coinTossWinnerId: string }) => void;
+  'game:rematch-waiting': () => void;
   'game:opponent-disconnected': () => void;
   'game:error': (data: { message: string }) => void;
 }

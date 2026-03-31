@@ -135,7 +135,48 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
       }
     });
 
-    // --- PLAY AGAIN ---
+    // --- REMATCH ---
+    socket.on('player:rematch', () => {
+      const game = gameManager.getGameForPlayer(socket.id);
+      if (!game || game.phase !== 'finished') return;
+
+      game.rematchRequests.add(socket.id);
+
+      // If only one player requested, tell them to wait
+      if (game.rematchRequests.size < 2) {
+        socket.emit('game:rematch-waiting');
+        return;
+      }
+
+      // Both players want a rematch — create new game
+      const oldRoom = `game:${game.gameId}`;
+      const newGame = gameManager.createRematch(game);
+      const roomName = `game:${newGame.gameId}`;
+
+      const [p1, p2] = newGame.players;
+      const p1Socket = io.sockets.sockets.get(p1.id);
+      const p2Socket = io.sockets.sockets.get(p2.id);
+
+      // Leave old room, join new room
+      p1Socket?.leave(oldRoom);
+      p2Socket?.leave(oldRoom);
+      p1Socket?.join(roomName);
+      p2Socket?.join(roomName);
+
+      const clientState = newGame.toClientState();
+      p1Socket?.emit('game:start', {
+        gameState: clientState,
+        yourPlayerId: p1.id,
+        imageExtension: newGame.imageExtension,
+      });
+      p2Socket?.emit('game:start', {
+        gameState: clientState,
+        yourPlayerId: p2.id,
+        imageExtension: newGame.imageExtension,
+      });
+    });
+
+    // --- PLAY AGAIN (back to lobby) ---
     socket.on('player:play-again', () => {
       const game = gameManager.getGameForPlayer(socket.id);
       if (game) {

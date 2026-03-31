@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { ClientGameState } from 'memory-game-shared';
 import { useSocket } from './useSocket';
 
-export type AppPhase = 'lobby' | 'waiting' | 'playing' | 'finished' | 'opponent-left';
+export type AppPhase = 'lobby' | 'waiting' | 'versus' | 'playing' | 'finished' | 'opponent-left';
 export type SuddenDeathPhase = null | 'transition' | 'coin-toss' | 'playing';
 
 export function useGame() {
@@ -16,10 +16,12 @@ export function useGame() {
   const [stillYourTurn, setStillYourTurn] = useState(false); // true briefly after you match
   const [suddenDeathPhase, setSuddenDeathPhase] = useState<SuddenDeathPhase>(null);
   const [coinTossWinnerId, setCoinTossWinnerId] = useState<string | null>(null);
+  const [rematchWaiting, setRematchWaiting] = useState(false);
   const stillTurnTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const matchGlowTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const sdTransitionRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const sdCoinTossRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const versusTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const myPlayerIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -30,7 +32,15 @@ export function useGame() {
       setMyPlayerId(yourPlayerId);
       myPlayerIdRef.current = yourPlayerId;
       setImageExtension(ext);
-      setPhase('playing');
+      setRematchWaiting(false);
+      setSuddenDeathPhase(null);
+      setCoinTossWinnerId(null);
+      setPhase('versus');
+      versusTimerRef.current = setTimeout(() => setPhase('playing'), 4500);
+    });
+
+    socket.on('game:rematch-waiting', () => {
+      setRematchWaiting(true);
     });
 
     socket.on('game:state-update', ({ gameState }) => {
@@ -127,6 +137,7 @@ export function useGame() {
       socket.off('game:turn-change');
       socket.off('game:over');
       socket.off('game:sudden-death');
+      socket.off('game:rematch-waiting');
       socket.off('game:opponent-disconnected');
       socket.off('game:error');
     };
@@ -155,6 +166,7 @@ export function useGame() {
     setCoinTossWinnerId(null);
     clearTimeout(sdTransitionRef.current);
     clearTimeout(sdCoinTossRef.current);
+    clearTimeout(versusTimerRef.current);
   }, [socket]);
 
   const playAgain = useCallback(() => {
@@ -163,8 +175,14 @@ export function useGame() {
     setGameState(null);
     setSuddenDeathPhase(null);
     setCoinTossWinnerId(null);
+    setRematchWaiting(false);
     clearTimeout(sdTransitionRef.current);
     clearTimeout(sdCoinTossRef.current);
+    clearTimeout(versusTimerRef.current);
+  }, [socket]);
+
+  const requestRematch = useCallback(() => {
+    socket.emit('player:rematch');
   }, [socket]);
 
   const isMyTurn = gameState?.currentTurnPlayerId === myPlayerId;
@@ -181,9 +199,11 @@ export function useGame() {
     stillYourTurn,
     suddenDeathPhase,
     coinTossWinnerId,
+    rematchWaiting,
     joinGame,
     flipCard,
     leaveGame,
     playAgain,
+    requestRematch,
   };
 }

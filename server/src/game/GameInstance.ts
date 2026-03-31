@@ -52,6 +52,7 @@ export class GameInstance {
   public winnerId: string | null;
   public imageExtension: string; // 'png' or 'svg'
   public suddenDeath = false;
+  public rematchRequests = new Set<string>();
   private flipLocked = false;
 
   constructor(
@@ -66,7 +67,7 @@ export class GameInstance {
       { id: p1.socketId, name: p1.name, score: 0, connected: true },
       { id: p2.socketId, name: p2.name, score: 0, connected: true },
     ];
-    this.currentTurnIndex = 0;
+    this.currentTurnIndex = Math.random() < 0.5 ? 0 : 1;
     this.flippedCardIds = [];
     this.pairsRemaining = TOTAL_PAIRS;
     this.phase = 'playing';

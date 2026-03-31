@@ -4,11 +4,21 @@ interface Props {
   gameState: ClientGameState | null;
   myPlayerId: string | null;
   opponentLeft: boolean;
+  rematchWaiting: boolean;
+  onRematch: () => void;
   onPlayAgain: () => void;
   onLeave: () => void;
 }
 
-export function GameOver({ gameState, myPlayerId, opponentLeft, onPlayAgain, onLeave }: Props) {
+export function GameOver({
+  gameState,
+  myPlayerId,
+  opponentLeft,
+  rematchWaiting,
+  onRematch,
+  onPlayAgain,
+  onLeave,
+}: Props) {
   if (opponentLeft) {
     return (
       <div className="game-over">
@@ -16,7 +26,7 @@ export function GameOver({ gameState, myPlayerId, opponentLeft, onPlayAgain, onL
           <h2>Opponent Left</h2>
           <p>Your opponent disconnected from the game.</p>
           <div className="game-over-actions">
-            <button onClick={onPlayAgain}>Play Again</button>
+            <button onClick={onPlayAgain}>Find New Game</button>
             <button className="btn-secondary" onClick={onLeave}>Back to Lobby</button>
           </div>
         </div>
@@ -61,7 +71,10 @@ export function GameOver({ gameState, myPlayerId, opponentLeft, onPlayAgain, onL
         </div>
 
         <div className="game-over-actions">
-          <button onClick={onPlayAgain}>Play Again</button>
+          <button onClick={onRematch} disabled={rematchWaiting}>
+            {rematchWaiting ? 'Waiting for opponent...' : 'Rematch'}
+          </button>
+          <button onClick={onPlayAgain}>Find New Game</button>
           <button className="btn-secondary" onClick={onLeave}>Back to Lobby</button>
         </div>
       </div>

@@ -47,6 +47,16 @@ export class GameManager {
     return game;
   }
 
+  createRematch(oldGame: GameInstance): GameInstance {
+    const p1: QueuedPlayer = { socketId: oldGame.players[0].id, name: oldGame.players[0].name };
+    const p2: QueuedPlayer = { socketId: oldGame.players[1].id, name: oldGame.players[1].name };
+
+    // Clean up old game
+    this.removeGame(oldGame.gameId);
+
+    return this.createGame(p1, p2);
+  }
+
   getGameForPlayer(socketId: string): GameInstance | undefined {
     const gameId = this.playerToGame.get(socketId);
     return gameId ? this.games.get(gameId) : undefined;
