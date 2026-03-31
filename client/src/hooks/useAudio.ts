@@ -40,15 +40,30 @@ export function useAudio() {
     });
   }, []);
 
+  const fadeIn = useCallback((audio: HTMLAudioElement, targetVol: number, durationMs = 2000): void => {
+    audio.volume = 0;
+    const steps = 30;
+    const stepTime = durationMs / steps;
+    let step = 0;
+    const interval = setInterval(() => {
+      step++;
+      audio.volume = Math.min(targetVol, targetVol * (step / steps));
+      if (step >= steps) clearInterval(interval);
+    }, stepTime);
+  }, []);
+
   const playTitle = useCallback(() => {
     if (!titleRef.current) {
       titleRef.current = new Audio(TITLE_TRACK);
       titleRef.current.loop = true;
     }
     titleRef.current.muted = mutedRef.current;
-    titleRef.current.volume = 0.4;
-    titleRef.current.play().catch(() => {});
-  }, []);
+    // Fade in gently over 2 seconds
+    titleRef.current.volume = 0;
+    titleRef.current.play().then(() => {
+      fadeIn(titleRef.current!, 0.4, 2000);
+    }).catch(() => {});
+  }, [fadeIn]);
 
   const stopTitle = useCallback(async () => {
     if (titleRef.current && !titleRef.current.paused) {

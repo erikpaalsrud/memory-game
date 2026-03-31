@@ -15,6 +15,21 @@ export function Lobby({ onJoin, isConnected }: Props) {
 
   return (
     <div className="lobby">
+      {/* Floating card decorations */}
+      <div className="lobby-cards-bg" aria-hidden>
+        <div className="floating-card fc-1" />
+        <div className="floating-card fc-2" />
+        <div className="floating-card fc-3" />
+        <div className="floating-card fc-4" />
+        <div className="floating-card fc-5" />
+        <div className="floating-card fc-6" />
+      </div>
+
+      <div className="lobby-hero">
+        <h1 className="lobby-title">Memory</h1>
+        <p className="lobby-tagline">The classic card game — now multiplayer</p>
+      </div>
+
       <div className="lobby-card">
         <h2>Join a Game</h2>
         <p>Enter your name to find an opponent</p>
@@ -30,6 +45,21 @@ export function Lobby({ onJoin, isConnected }: Props) {
         <button onClick={handleSubmit} disabled={!name.trim() || !isConnected}>
           {isConnected ? 'Find Game' : 'Connecting...'}
         </button>
+      </div>
+
+      <div className="lobby-info">
+        <div className="info-step">
+          <span className="info-icon">&#127183;</span>
+          <span>Flip cards to reveal images</span>
+        </div>
+        <div className="info-step">
+          <span className="info-icon">&#129504;</span>
+          <span>Remember positions & find matching pairs</span>
+        </div>
+        <div className="info-step">
+          <span className="info-icon">&#9876;</span>
+          <span>Outscore your opponent to win</span>
+        </div>
       </div>
     </div>
   );

@@ -14,6 +14,21 @@ function App() {
   const audio = useAudio();
   const prevPhaseRef = useRef(game.phase);
 
+  // Start title music on first interaction (browsers require user gesture)
+  useEffect(() => {
+    const startMusic = () => {
+      audio.playTitle();
+      document.removeEventListener('click', startMusic);
+      document.removeEventListener('keydown', startMusic);
+    };
+    document.addEventListener('click', startMusic);
+    document.addEventListener('keydown', startMusic);
+    return () => {
+      document.removeEventListener('click', startMusic);
+      document.removeEventListener('keydown', startMusic);
+    };
+  }, []);
+
   // Drive music based on phase transitions
   useEffect(() => {
     const prev = prevPhaseRef.current;
@@ -21,23 +36,22 @@ function App() {
     prevPhaseRef.current = curr;
 
     if (curr === 'lobby' || curr === 'waiting') {
-      // Title music for lobby/waiting
       audio.stopBattle();
       audio.playTitle();
     } else if (curr === 'versus') {
-      // Battle music starts at versus screen
       audio.playBattle();
     } else if (curr === 'finished' || curr === 'opponent-left') {
-      // Keep battle music running on game over (feels natural)
+      // Keep battle music running
     } else if (curr === 'playing' && prev === 'lobby') {
-      // Edge case: if somehow we skip versus
       audio.playBattle();
     }
   }, [game.phase]);
 
+  const showHeader = game.phase !== 'lobby';
+
   return (
     <div className="app">
-      <Header />
+      {showHeader && <Header />}
 
       <button
         className="mute-btn"
