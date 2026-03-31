@@ -147,10 +147,9 @@ export class GameInstance {
         };
       }
 
-      // Check if sudden death should activate
+      // Check if sudden death should activate (don't set flag yet — handler calls activateSuddenDeath)
       let suddenDeathActivated = false;
-      if (this.isScoreTied() && this.pairsRemaining <= SUDDEN_DEATH_THRESHOLD) {
-        this.suddenDeath = true;
+      if (!this.suddenDeath && this.isScoreTied() && this.pairsRemaining <= SUDDEN_DEATH_THRESHOLD) {
         suddenDeathActivated = true;
       }
 
@@ -174,6 +173,24 @@ export class GameInstance {
       label: card.label,
       mismatchedCardIds: [firstId, secondId],
     };
+  }
+
+  activateSuddenDeath(): { coinTossWinnerId: string } {
+    this.suddenDeath = true;
+
+    // Shuffle the imageIds of remaining face-down cards so prior memory is useless
+    const faceDownCards = this.cards.filter((c) => c.state === 'face-down');
+    const imageData = faceDownCards.map((c) => ({ imageId: c.imageId, label: c.label }));
+    const shuffledData = shuffle(imageData);
+    faceDownCards.forEach((card, i) => {
+      card.imageId = shuffledData[i].imageId;
+      card.label = shuffledData[i].label;
+    });
+
+    // Coin toss for who goes first
+    this.currentTurnIndex = Math.random() < 0.5 ? 0 : 1;
+
+    return { coinTossWinnerId: this.players[this.currentTurnIndex].id };
   }
 
   resolveMismatch(): void {

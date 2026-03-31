@@ -3,6 +3,7 @@ import type { ClientGameState } from 'memory-game-shared';
 import { useSocket } from './useSocket';
 
 export type AppPhase = 'lobby' | 'waiting' | 'playing' | 'finished' | 'opponent-left';
+export type SuddenDeathPhase = null | 'transition' | 'coin-toss' | 'playing';
 
 export function useGame() {
   const { socket, isConnected } = useSocket();
@@ -13,9 +14,12 @@ export function useGame() {
   const [imageExtension, setImageExtension] = useState('svg');
   const [matchedCardIds, setMatchedCardIds] = useState<number[]>([]); // cards that just matched (for glow)
   const [stillYourTurn, setStillYourTurn] = useState(false); // true briefly after you match
-  const [suddenDeath, setSuddenDeath] = useState(false);
+  const [suddenDeathPhase, setSuddenDeathPhase] = useState<SuddenDeathPhase>(null);
+  const [coinTossWinnerId, setCoinTossWinnerId] = useState<string | null>(null);
   const stillTurnTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const matchGlowTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const sdTransitionRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const sdCoinTossRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const myPlayerIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -96,8 +100,12 @@ export function useGame() {
       setPhase('finished');
     });
 
-    socket.on('game:sudden-death', () => {
-      setSuddenDeath(true);
+    socket.on('game:sudden-death', ({ coinTossWinnerId: winnerId }) => {
+      setCoinTossWinnerId(winnerId);
+      setSuddenDeathPhase('transition');
+
+      sdTransitionRef.current = setTimeout(() => setSuddenDeathPhase('coin-toss'), 2500);
+      sdCoinTossRef.current = setTimeout(() => setSuddenDeathPhase('playing'), 5000);
     });
 
     socket.on('game:opponent-disconnected', () => {
@@ -143,14 +151,20 @@ export function useGame() {
     setPhase('lobby');
     setGameState(null);
     setMyPlayerId(null);
-    setSuddenDeath(false);
+    setSuddenDeathPhase(null);
+    setCoinTossWinnerId(null);
+    clearTimeout(sdTransitionRef.current);
+    clearTimeout(sdCoinTossRef.current);
   }, [socket]);
 
   const playAgain = useCallback(() => {
     socket.emit('player:play-again');
     setPhase('lobby');
     setGameState(null);
-    setSuddenDeath(false);
+    setSuddenDeathPhase(null);
+    setCoinTossWinnerId(null);
+    clearTimeout(sdTransitionRef.current);
+    clearTimeout(sdCoinTossRef.current);
   }, [socket]);
 
   const isMyTurn = gameState?.currentTurnPlayerId === myPlayerId;
@@ -165,7 +179,8 @@ export function useGame() {
     imageExtension,
     matchedCardIds,
     stillYourTurn,
-    suddenDeath,
+    suddenDeathPhase,
+    coinTossWinnerId,
     joinGame,
     flipCard,
     leaveGame,

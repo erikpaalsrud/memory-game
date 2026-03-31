@@ -71,7 +71,7 @@ export interface ServerToClientEvents {
   'game:pair-mismatch': (data: { cardIds: [number, number] }) => void;
   'game:turn-change': (data: { currentTurnPlayerId: string }) => void;
   'game:over': (data: { gameState: ClientGameState }) => void;
-  'game:sudden-death': () => void;
+  'game:sudden-death': (data: { coinTossWinnerId: string }) => void;
   'game:opponent-disconnected': () => void;
   'game:error': (data: { message: string }) => void;
 }

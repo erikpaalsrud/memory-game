@@ -88,12 +88,13 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
             cardIds: result.matchedCardIds,
             playerId: result.playerId,
           });
+          if (result.suddenDeathActivated) {
+            const { coinTossWinnerId } = game.activateSuddenDeath();
+            io.to(roomName).emit('game:sudden-death', { coinTossWinnerId });
+          }
           io.to(roomName).emit('game:state-update', {
             gameState: game.toClientState(),
           });
-          if (result.suddenDeathActivated) {
-            io.to(roomName).emit('game:sudden-death');
-          }
           break;
 
         case 'match-game-over':

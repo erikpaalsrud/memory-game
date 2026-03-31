@@ -115,71 +115,207 @@
   justify-content: center;
 }
 
-.skull-icon {
+/* === Sudden Death: Overlay (shared by transition + coin toss) === */
+
+.sd-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 360px;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.sd-title {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #ff3333;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  text-shadow: 0 0 30px rgba(255, 50, 50, 0.6);
+  animation: sdTitlePulse 1.5s ease-in-out infinite;
+  margin-bottom: 8px;
+}
+
+.sd-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-bottom: 32px;
+  animation: fadeIn 1s ease-out;
+}
+
+@keyframes sdTitlePulse {
+  0%, 100% { text-shadow: 0 0 20px rgba(255, 50, 50, 0.4); transform: scale(1); }
+  50% { text-shadow: 0 0 40px rgba(255, 50, 50, 0.8); transform: scale(1.03); }
+}
+
+/* === Sudden Death: Shuffle Animation === */
+
+.sd-shuffle-hand {
+  position: relative;
+  height: 160px;
+  width: 300px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sd-shuffle-card {
+  position: absolute;
+  width: 80px;
+  height: 112px;
+  bottom: 0;
+  left: 50%;
+  margin-left: -40px;
+  transform-origin: 50% 200%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  animation: shuffleDance 2.5s ease-in-out forwards;
+  animation-delay: calc(var(--i) * 0.08s);
+}
+
+.sd-shuffle-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@keyframes shuffleDance {
+  0% { transform: rotate(0deg) scale(0.6); opacity: 0; }
+  15% { transform: rotate(0deg) scale(1); opacity: 1; }
+  30% { transform: rotate(var(--angle)) scale(1); }
+  45% { transform: rotate(0deg) translateX(calc((var(--i) - var(--n) / 2) * 20px)) scale(0.9); }
+  60% { transform: rotate(calc(var(--angle) * -1)) scale(0.95); }
+  75% { transform: rotate(0deg) scale(0.9); }
+  100% { transform: rotate(var(--angle)) scale(1); }
+}
+
+/* === Sudden Death: Coin Toss === */
+
+.coin-toss {
+  margin-bottom: 24px;
+}
+
+.coin {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  position: relative;
+  transform-style: preserve-3d;
+  animation: coinSpin 2s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+.coin-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 2rem;
-  opacity: 0;
-  animation: skullAppear 0.6s ease-out forwards, skullPulse 2s ease-in-out infinite 0.6s;
+  font-weight: 900;
 }
 
-@keyframes skullAppear {
-  from { opacity: 0; transform: scale(0.3) rotate(-180deg); }
-  to { opacity: 1; transform: scale(1) rotate(0deg); }
+.coin-front {
+  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  color: #5a3d00;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.15);
 }
 
-@keyframes skullPulse {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(255, 50, 50, 0.5)); }
-  50% { transform: scale(1.15); filter: drop-shadow(0 0 12px rgba(255, 50, 50, 0.8)); }
+.coin-back-side {
+  background: linear-gradient(135deg, #c0c0c0, #888);
+  color: #333;
+  transform: rotateY(180deg);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.15);
 }
 
-.sudden-death-center {
-  background: rgba(255, 30, 30, 0.1);
-  border-color: rgba(255, 50, 50, 0.3);
-  animation: centerGlow 2s ease-in-out infinite;
+@keyframes coinSpin {
+  0% { transform: rotateY(0deg) scale(0.5); opacity: 0; }
+  10% { opacity: 1; }
+  80% { transform: rotateY(1800deg) scale(1); }
+  100% { transform: rotateY(1800deg) scale(1); }
 }
 
-@keyframes centerGlow {
-  0%, 100% { box-shadow: 0 0 8px rgba(255, 50, 50, 0.2); }
-  50% { box-shadow: 0 0 24px rgba(255, 50, 50, 0.5); }
+.coin-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  animation: fadeIn 0.5s ease-out 1.5s both;
 }
 
-/* === Sudden Death === */
+.coin-winner-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffd700;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+}
 
-.sudden-death-banner {
+.coin-goes-first {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+/* === Sudden Death: Hand of Cards (playing) === */
+
+.sd-banner {
   text-align: center;
   font-weight: 800;
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #ff3333;
   text-transform: uppercase;
   letter-spacing: 2px;
-  padding: 8px 20px;
-  margin-bottom: 8px;
-  animation: bannerFlash 1.5s ease-in-out infinite;
+  padding: 6px 16px;
+  margin-bottom: 12px;
+  animation: sdBannerFlash 1.5s ease-in-out infinite;
 }
 
-@keyframes bannerFlash {
-  0%, 100% { opacity: 1; text-shadow: 0 0 8px rgba(255, 50, 50, 0.5); }
-  50% { opacity: 0.7; text-shadow: 0 0 20px rgba(255, 50, 50, 0.9); }
+@keyframes sdBannerFlash {
+  0%, 100% { opacity: 1; text-shadow: 0 0 8px rgba(255, 50, 50, 0.4); }
+  50% { opacity: 0.7; text-shadow: 0 0 16px rgba(255, 50, 50, 0.8); }
 }
 
-.game-board-wrapper.sudden-death .game-board {
-  animation: boardChaos 6s ease-in-out infinite;
+.sd-hand {
+  position: relative;
+  height: 260px;
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
 }
 
-@keyframes boardChaos {
-  0%   { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-  15%  { transform: rotateX(4deg) rotateY(-6deg) rotateZ(1deg); }
-  30%  { transform: rotateX(-3deg) rotateY(5deg) rotateZ(-2deg); }
-  45%  { transform: rotateX(5deg) rotateY(3deg) rotateZ(1.5deg); }
-  60%  { transform: rotateX(-4deg) rotateY(-4deg) rotateZ(-1deg); }
-  75%  { transform: rotateX(3deg) rotateY(6deg) rotateZ(2deg); }
-  100% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+.sd-hand-slot {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  bottom: 40px;
+  left: 50%;
+  margin-left: -45px;
+  transform-origin: 50% 250%;
+  transition: transform 0.3s ease;
 }
 
-.turn-indicator.sudden-death-turn {
+.sd-hand-slot:hover {
+  z-index: 10 !important;
+}
+
+.sd-hand-slot .card-container {
+  width: 90px;
+  height: 90px;
+}
+
+.turn-indicator.sd-turn {
   color: #ff3333;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.turn-indicator.sd-turn.your-turn {
+  color: #ff3333;
   animation: pulse 0.8s ease-in-out infinite;
 }
 
@@ -521,6 +657,21 @@ button:disabled {
 
   .game-over-actions {
     flex-direction: column;
+  }
+
+  .sd-hand-slot {
+    width: 70px;
+    height: 70px;
+    margin-left: -35px;
+  }
+
+  .sd-hand-slot .card-container {
+    width: 70px;
+    height: 70px;
+  }
+
+  .sd-title {
+    font-size: 1.8rem;
   }
 }
 

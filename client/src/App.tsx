@@ -35,7 +35,8 @@ function App() {
           imageExtension={game.imageExtension}
           matchedCardIds={game.matchedCardIds}
           stillYourTurn={game.stillYourTurn}
-          suddenDeath={game.suddenDeath}
+          suddenDeathPhase={game.suddenDeathPhase}
+          coinTossWinnerId={game.coinTossWinnerId}
         />
       )}
 
