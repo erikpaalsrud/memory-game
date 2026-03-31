@@ -1,12 +1,32 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 
-const BATTLE_TRACKS = ['/music/battle_1.mp3', '/music/battle_2.mp3'];
+const BATTLE_TRACKS = [
+  '/music/battle_1.mp3',
+  '/music/battle_2.mp3',
+  '/music/battle_3.mp3',
+  '/music/battle_4.mp3',
+  '/music/battle_5.mp3',
+  '/music/battle_6.mp3',
+];
 const TITLE_TRACK = '/music/title_menu.mp3';
 const FADE_MS = 800;
+
+// SFX paths
+const SFX = {
+  cardFlip: '/sfx/card_flip.ogg',
+  matchChime: '/sfx/match_chime.ogg',
+  mismatch: '/sfx/mismatch.ogg',
+  vsClash: '/sfx/vs_clash.ogg',
+  coinToss: '/sfx/coin_toss.ogg',
+  suddenDeath: '/sfx/sudden_death.ogg',
+} as const;
+
+type SfxName = keyof typeof SFX;
 
 export function useAudio() {
   const titleRef = useRef<HTMLAudioElement | null>(null);
   const battleRef = useRef<HTMLAudioElement | null>(null);
+  const sfxPoolRef = useRef<Map<string, HTMLAudioElement[]>>(new Map());
   const [muted, setMuted] = useState(() => {
     try { return localStorage.getItem('memory-muted') === 'true'; } catch { return false; }
   });
@@ -19,6 +39,22 @@ export function useAudio() {
     if (battleRef.current) battleRef.current.muted = muted;
     try { localStorage.setItem('memory-muted', String(muted)); } catch {}
   }, [muted]);
+
+  // Play a one-shot SFX (pool of 3 per sound so overlaps work)
+  const playSfx = useCallback((name: SfxName, volume = 0.6) => {
+    if (mutedRef.current) return;
+    const src = SFX[name];
+    let pool = sfxPoolRef.current.get(src);
+    if (!pool) {
+      pool = [new Audio(src), new Audio(src), new Audio(src)];
+      sfxPoolRef.current.set(src, pool);
+    }
+    // Find an idle audio element or reuse the oldest
+    const audio = pool.find(a => a.paused) ?? pool[0];
+    audio.currentTime = 0;
+    audio.volume = volume;
+    audio.play().catch(() => {});
+  }, []);
 
   const fadeOut = useCallback((audio: HTMLAudioElement): Promise<void> => {
     return new Promise((resolve) => {
@@ -58,7 +94,6 @@ export function useAudio() {
       titleRef.current.loop = true;
     }
     titleRef.current.muted = mutedRef.current;
-    // Fade in gently over 2 seconds
     titleRef.current.volume = 0;
     titleRef.current.play().then(() => {
       fadeIn(titleRef.current!, 0.4, 2000);
@@ -73,10 +108,7 @@ export function useAudio() {
   }, [fadeOut]);
 
   const playBattle = useCallback(async () => {
-    // Fade out title first
     await stopTitle();
-
-    // Pick a random battle track
     const track = BATTLE_TRACKS[Math.floor(Math.random() * BATTLE_TRACKS.length)];
     if (!battleRef.current) {
       battleRef.current = new Audio(track);
@@ -104,7 +136,6 @@ export function useAudio() {
     setMuted((m) => !m);
   }, []);
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       titleRef.current?.pause();
@@ -112,5 +143,5 @@ export function useAudio() {
     };
   }, []);
 
-  return { muted, toggleMute, playTitle, stopTitle, playBattle, stopBattle, stopAll };
+  return { muted, toggleMute, playTitle, stopTitle, playBattle, stopBattle, stopAll, playSfx };
 }

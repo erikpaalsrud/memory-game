@@ -1,5 +1,5 @@
 import { shuffle } from './shuffler.js';
-import { TOTAL_PAIRS, SUDDEN_DEATH_THRESHOLD } from 'memory-game-shared';
+import { TOTAL_PAIRS } from 'memory-game-shared';
 import type {
   CardDefinition,
   CardInstance,
@@ -22,10 +22,17 @@ export type FlipResult =
       label: string;
       matchedCardIds: [number, number];
       playerId: string;
-      suddenDeathActivated: boolean;
     }
   | {
       type: 'match-game-over';
+      cardId: number;
+      imageId: string;
+      label: string;
+      matchedCardIds: [number, number];
+      playerId: string;
+    }
+  | {
+      type: 'match-enter-sudden-death';
       cardId: number;
       imageId: string;
       label: string;
@@ -41,6 +48,8 @@ export type FlipResult =
     }
   | { type: 'error'; message: string };
 
+const SUDDEN_DEATH_PAIRS = 2; // 4 cards, 2 images — the decider
+
 export class GameInstance {
   public gameId: string;
   public players: [Player, Player];
@@ -50,10 +59,19 @@ export class GameInstance {
   public pairsRemaining: number;
   public phase: GamePhase;
   public winnerId: string | null;
-  public imageExtension: string; // 'png' or 'svg'
+  public imageExtension: string;
+  public spectateCode: string;
   public suddenDeath = false;
   public rematchRequests = new Set<string>();
   private flipLocked = false;
+  private imagePool: CardDefinition[];
+
+  private static generateCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 to avoid confusion
+    let code = '';
+    for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  }
 
   constructor(
     gameId: string,
@@ -63,6 +81,8 @@ export class GameInstance {
     imageExtension: string
   ) {
     this.gameId = gameId;
+    this.spectateCode = GameInstance.generateCode();
+    this.imagePool = imagePool;
     this.players = [
       { id: p1.socketId, name: p1.name, score: 0, connected: true },
       { id: p2.socketId, name: p2.name, score: 0, connected: true },
@@ -120,7 +140,7 @@ export class GameInstance {
       this.pairsRemaining--;
       this.flippedCardIds = [];
 
-      // Sudden death instant win: first match in sudden death wins
+      // Sudden death: first match wins instantly
       if (this.suddenDeath) {
         this.phase = 'finished';
         this.winnerId = playerId;
@@ -134,10 +154,22 @@ export class GameInstance {
         };
       }
 
-      // Normal game over
+      // All pairs found
       if (this.pairsRemaining === 0) {
+        if (this.isScoreTied()) {
+          // Tie! Enter sudden death instead of ending
+          return {
+            type: 'match-enter-sudden-death',
+            cardId,
+            imageId: card.imageId,
+            label: card.label,
+            matchedCardIds: [firstId, secondId],
+            playerId,
+          };
+        }
+        // Clear winner
         this.phase = 'finished';
-        this.winnerId = this.determineWinner(playerId);
+        this.winnerId = this.determineWinner();
         return {
           type: 'match-game-over',
           cardId,
@@ -148,12 +180,6 @@ export class GameInstance {
         };
       }
 
-      // Check if sudden death should activate (don't set flag yet — handler calls activateSuddenDeath)
-      let suddenDeathActivated = false;
-      if (!this.suddenDeath && this.isScoreTied() && this.pairsRemaining <= SUDDEN_DEATH_THRESHOLD) {
-        suddenDeathActivated = true;
-      }
-
       return {
         type: 'match',
         cardId,
@@ -161,7 +187,6 @@ export class GameInstance {
         label: card.label,
         matchedCardIds: [firstId, secondId],
         playerId,
-        suddenDeathActivated,
       };
     }
 
@@ -179,14 +204,19 @@ export class GameInstance {
   activateSuddenDeath(): { coinTossWinnerId: string } {
     this.suddenDeath = true;
 
-    // Shuffle the imageIds of remaining face-down cards so prior memory is useless
-    const faceDownCards = this.cards.filter((c) => c.state === 'face-down');
-    const imageData = faceDownCards.map((c) => ({ imageId: c.imageId, label: c.label }));
-    const shuffledData = shuffle(imageData);
-    faceDownCards.forEach((card, i) => {
-      card.imageId = shuffledData[i].imageId;
-      card.label = shuffledData[i].label;
-    });
+    // Deal fresh cards: 2 pairs = 4 cards
+    const selected = shuffle([...this.imagePool]).slice(0, SUDDEN_DEATH_PAIRS);
+    const cardPairs = [...selected, ...selected];
+    const shuffled = shuffle(cardPairs);
+
+    this.cards = shuffled.map((def, index) => ({
+      id: index,
+      imageId: def.imageId,
+      label: def.label,
+      state: 'face-down' as const,
+    }));
+    this.pairsRemaining = SUDDEN_DEATH_PAIRS;
+    this.flippedCardIds = [];
 
     // Coin toss for who goes first
     this.currentTurnIndex = Math.random() < 0.5 ? 0 : 1;
@@ -207,12 +237,10 @@ export class GameInstance {
     return this.players[0].score === this.players[1].score;
   }
 
-  private determineWinner(lastMatchPlayerId?: string): string | null {
+  private determineWinner(): string | null {
     const [p1, p2] = this.players;
     if (p1.score > p2.score) return p1.id;
     if (p2.score > p1.score) return p2.id;
-    // Tiebreaker: last player to match wins (no draws allowed)
-    if (lastMatchPlayerId) return lastMatchPlayerId;
     return null;
   }
 
@@ -228,6 +256,7 @@ export class GameInstance {
   toClientState(): ClientGameState {
     return {
       gameId: this.gameId,
+      spectateCode: this.spectateCode,
       phase: this.phase,
       players: [...this.players] as [Player, Player],
       cards: this.cards.map((card) => ({

@@ -2,13 +2,16 @@ import { useState } from 'react';
 
 interface Props {
   onJoin: (name: string) => void;
+  onSpectate: (code: string) => void;
   isConnected: boolean;
 }
 
 const EMOJIS = ['🃏', '🧠', '⭐', '🎮', '🏆', '✨', '🎯', '🔮', '🌟', '💎', '🎪', '🦄'];
 
-export function Lobby({ onJoin, isConnected }: Props) {
+export function Lobby({ onJoin, onSpectate, isConnected }: Props) {
   const [name, setName] = useState('');
+  const [spectateCode, setSpectateCode] = useState('');
+  const [showSpectate, setShowSpectate] = useState(false);
 
   const handleSubmit = () => {
     const trimmed = name.trim();
@@ -108,6 +111,31 @@ export function Lobby({ onJoin, isConnected }: Props) {
           <span className="info-icon bounce-3">🏆</span>
           <span>Outscore your opponent to win!</span>
         </div>
+      </div>
+
+      <div className="lobby-spectate">
+        {!showSpectate ? (
+          <button className="btn-spectate-toggle" onClick={() => setShowSpectate(true)}>
+            👀 Watch a game
+          </button>
+        ) : (
+          <div className="spectate-form">
+            <input
+              type="text"
+              value={spectateCode}
+              onChange={(e) => setSpectateCode(e.target.value.toUpperCase())}
+              placeholder="Enter watch code"
+              maxLength={5}
+              onKeyDown={(e) => e.key === 'Enter' && spectateCode.trim() && onSpectate(spectateCode.trim())}
+            />
+            <button
+              onClick={() => spectateCode.trim() && onSpectate(spectateCode.trim())}
+              disabled={!spectateCode.trim() || !isConnected}
+            >
+              Watch
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -57,6 +57,13 @@ export class GameManager {
     return this.createGame(p1, p2);
   }
 
+  getGameBySpectateCode(code: string): GameInstance | undefined {
+    for (const game of this.games.values()) {
+      if (game.spectateCode === code) return game;
+    }
+    return undefined;
+  }
+
   getGameForPlayer(socketId: string): GameInstance | undefined {
     const gameId = this.playerToGame.get(socketId);
     return gameId ? this.games.get(gameId) : undefined;

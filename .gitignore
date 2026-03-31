@@ -3,3 +3,5 @@ dist/
 .env
 *.tsbuildinfo
 server/public/cards/*.png
+.DS_Store
+import music/

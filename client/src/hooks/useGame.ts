@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { ClientGameState } from 'memory-game-shared';
 import { useSocket } from './useSocket';
 
-export type AppPhase = 'lobby' | 'waiting' | 'versus' | 'playing' | 'finished' | 'opponent-left';
+export type AppPhase = 'lobby' | 'waiting' | 'versus' | 'playing' | 'finished' | 'opponent-left' | 'spectating';
 export type SuddenDeathPhase = null | 'transition' | 'coin-toss' | 'playing';
 
 export function useGame() {
@@ -17,12 +17,23 @@ export function useGame() {
   const [suddenDeathPhase, setSuddenDeathPhase] = useState<SuddenDeathPhase>(null);
   const [coinTossWinnerId, setCoinTossWinnerId] = useState<string | null>(null);
   const [rematchWaiting, setRematchWaiting] = useState(false);
+  const [isSpectator, setIsSpectator] = useState(false);
+  const [sfxEvent, setSfxEvent] = useState<{ type: string; seq: number }>({ type: '', seq: 0 });
   const stillTurnTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const matchGlowTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const sdTransitionRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const sdCoinTossRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const versusTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const myPlayerIdRef = useRef<string | null>(null);
+
+  // Check URL for spectate code on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const watchCode = params.get('watch');
+    if (watchCode && isConnected) {
+      socket.emit('spectator:join', { spectateCode: watchCode });
+    }
+  }, [isConnected]);
 
   useEffect(() => {
     socket.on('game:waiting', () => setPhase('waiting'));
@@ -35,8 +46,31 @@ export function useGame() {
       setRematchWaiting(false);
       setSuddenDeathPhase(null);
       setCoinTossWinnerId(null);
+      setIsSpectator(false);
       setPhase('versus');
       versusTimerRef.current = setTimeout(() => setPhase('playing'), 4500);
+    });
+
+    socket.on('game:spectate-start', ({ gameState, imageExtension: ext }) => {
+      setGameState(gameState);
+      setImageExtension(ext);
+      setMyPlayerId(null);
+      myPlayerIdRef.current = null;
+      setIsSpectator(true);
+      // Jump straight to playing if game is in progress, otherwise show state
+      if (gameState.phase === 'playing') {
+        setPhase('spectating');
+      } else {
+        setPhase('spectating');
+      }
+    });
+
+    socket.on('game:spectate-ended', () => {
+      setPhase('lobby');
+      setGameState(null);
+      setIsSpectator(false);
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
     });
 
     socket.on('game:rematch-waiting', () => {
@@ -48,6 +82,7 @@ export function useGame() {
     });
 
     socket.on('game:card-flipped', ({ cardId, imageId, label }) => {
+      setSfxEvent(e => ({ type: 'flip', seq: e.seq + 1 }));
       setGameState((prev) => {
         if (!prev) return prev;
         return {
@@ -60,7 +95,7 @@ export function useGame() {
     });
 
     socket.on('game:pair-matched', ({ cardIds, playerId }) => {
-      // Flash the matched cards
+      setSfxEvent(e => ({ type: 'match', seq: e.seq + 1 }));
       setMatchedCardIds(cardIds);
       clearTimeout(matchGlowTimerRef.current);
       matchGlowTimerRef.current = setTimeout(() => setMatchedCardIds([]), 1500);
@@ -68,7 +103,6 @@ export function useGame() {
       setGameState((prev) => {
         if (!prev) return prev;
 
-        // If I matched, show "Still your turn!"
         if (playerId === myPlayerIdRef.current) {
           setStillYourTurn(true);
           clearTimeout(stillTurnTimerRef.current);
@@ -88,6 +122,7 @@ export function useGame() {
     });
 
     socket.on('game:pair-mismatch', ({ cardIds }) => {
+      setSfxEvent(e => ({ type: 'mismatch', seq: e.seq + 1 }));
       setGameState((prev) => {
         if (!prev) return prev;
         return {
@@ -107,10 +142,11 @@ export function useGame() {
 
     socket.on('game:over', ({ gameState }) => {
       setGameState(gameState);
-      setPhase('finished');
+      setPhase(prev => prev === 'spectating' ? 'spectating' : 'finished');
     });
 
     socket.on('game:sudden-death', ({ coinTossWinnerId: winnerId }) => {
+      setSfxEvent(e => ({ type: 'suddenDeath', seq: e.seq + 1 }));
       setCoinTossWinnerId(winnerId);
       setSuddenDeathPhase('transition');
 
@@ -119,7 +155,7 @@ export function useGame() {
     });
 
     socket.on('game:opponent-disconnected', () => {
-      setPhase('opponent-left');
+      setPhase(prev => prev === 'spectating' ? 'spectating' : 'opponent-left');
     });
 
     socket.on('game:error', ({ message }) => {
@@ -130,6 +166,8 @@ export function useGame() {
     return () => {
       socket.off('game:waiting');
       socket.off('game:start');
+      socket.off('game:spectate-start');
+      socket.off('game:spectate-ended');
       socket.off('game:state-update');
       socket.off('game:card-flipped');
       socket.off('game:pair-matched');
@@ -150,11 +188,19 @@ export function useGame() {
     [socket]
   );
 
-  const flipCard = useCallback(
-    (cardId: number) => {
-      socket.emit('player:flip-card', { cardId });
+  const spectateGame = useCallback(
+    (code: string) => {
+      socket.emit('spectator:join', { spectateCode: code });
     },
     [socket]
+  );
+
+  const flipCard = useCallback(
+    (cardId: number) => {
+      if (isSpectator) return;
+      socket.emit('player:flip-card', { cardId });
+    },
+    [socket, isSpectator]
   );
 
   const leaveGame = useCallback(() => {
@@ -162,17 +208,20 @@ export function useGame() {
     setPhase('lobby');
     setGameState(null);
     setMyPlayerId(null);
+    setIsSpectator(false);
     setSuddenDeathPhase(null);
     setCoinTossWinnerId(null);
     clearTimeout(sdTransitionRef.current);
     clearTimeout(sdCoinTossRef.current);
     clearTimeout(versusTimerRef.current);
+    window.history.replaceState({}, '', window.location.pathname);
   }, [socket]);
 
   const playAgain = useCallback(() => {
     socket.emit('player:play-again');
     setPhase('lobby');
     setGameState(null);
+    setIsSpectator(false);
     setSuddenDeathPhase(null);
     setCoinTossWinnerId(null);
     setRematchWaiting(false);
@@ -194,13 +243,16 @@ export function useGame() {
     error,
     isConnected,
     isMyTurn,
+    isSpectator,
     imageExtension,
     matchedCardIds,
     stillYourTurn,
     suddenDeathPhase,
     coinTossWinnerId,
     rematchWaiting,
+    sfxEvent,
     joinGame,
+    spectateGame,
     flipCard,
     leaveGame,
     playAgain,

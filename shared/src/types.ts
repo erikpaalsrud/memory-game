@@ -44,6 +44,7 @@ export interface ClientCardInstance {
 
 export interface ClientGameState {
   gameId: string;
+  spectateCode: string;
   phase: GamePhase;
   players: [Player, Player];
   cards: ClientCardInstance[];
@@ -61,6 +62,7 @@ export interface ClientToServerEvents {
   'player:leave': () => void;
   'player:play-again': () => void;
   'player:rematch': () => void;
+  'spectator:join': (data: { spectateCode: string }) => void;
 }
 
 export interface ServerToClientEvents {
@@ -74,6 +76,8 @@ export interface ServerToClientEvents {
   'game:over': (data: { gameState: ClientGameState }) => void;
   'game:sudden-death': (data: { coinTossWinnerId: string }) => void;
   'game:rematch-waiting': () => void;
+  'game:spectate-start': (data: { gameState: ClientGameState; spectateCode: string; imageExtension: string }) => void;
+  'game:spectate-ended': () => void;
   'game:opponent-disconnected': () => void;
   'game:error': (data: { message: string }) => void;
 }

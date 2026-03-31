@@ -88,13 +88,30 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
             cardIds: result.matchedCardIds,
             playerId: result.playerId,
           });
-          if (result.suddenDeathActivated) {
-            const { coinTossWinnerId } = game.activateSuddenDeath();
-            io.to(roomName).emit('game:sudden-death', { coinTossWinnerId });
-          }
           io.to(roomName).emit('game:state-update', {
             gameState: game.toClientState(),
           });
+          break;
+
+        case 'match-enter-sudden-death':
+          // Last pair matched and scores are tied — enter sudden death
+          io.to(roomName).emit('game:card-flipped', {
+            cardId: result.cardId,
+            imageId: result.imageId,
+            label: result.label,
+          });
+          io.to(roomName).emit('game:pair-matched', {
+            cardIds: result.matchedCardIds,
+            playerId: result.playerId,
+          });
+          // Delay so the last match swoosh plays before sudden death takes over
+          setTimeout(() => {
+            const { coinTossWinnerId } = game.activateSuddenDeath();
+            io.to(roomName).emit('game:sudden-death', { coinTossWinnerId });
+            io.to(roomName).emit('game:state-update', {
+              gameState: game.toClientState(),
+            });
+          }, 1500);
           break;
 
         case 'match-game-over':
@@ -174,6 +191,30 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
         yourPlayerId: p2.id,
         imageExtension: newGame.imageExtension,
       });
+    });
+
+    // --- SPECTATE ---
+    socket.on('spectator:join', ({ spectateCode }) => {
+      const code = (spectateCode || '').trim().toUpperCase();
+      if (!code) {
+        socket.emit('game:error', { message: 'Invalid spectate code' });
+        return;
+      }
+
+      const game = gameManager.getGameBySpectateCode(code);
+      if (!game) {
+        socket.emit('game:error', { message: 'Game not found' });
+        return;
+      }
+
+      // Join the game room as spectator (receives all broadcasts)
+      socket.join(`game:${game.gameId}`);
+      socket.emit('game:spectate-start', {
+        gameState: game.toClientState(),
+        spectateCode: game.spectateCode,
+        imageExtension: game.imageExtension,
+      });
+      console.log(`Spectator ${socket.id} joined game ${game.spectateCode}`);
     });
 
     // --- PLAY AGAIN (back to lobby) ---

@@ -1,5 +1,6 @@
 import { Card } from './Card';
 import { ScoreBoard } from './ScoreBoard';
+import { Topsi } from './Topsi';
 import { GRID_COLS, GRID_CELLS, CENTER_CELL } from 'memory-game-shared';
 import type { ClientGameState } from 'memory-game-shared';
 import type { SuddenDeathPhase } from '../hooks/useGame';
@@ -8,6 +9,7 @@ interface Props {
   gameState: ClientGameState;
   myPlayerId: string;
   isMyTurn: boolean;
+  isSpectator: boolean;
   onFlipCard: (cardId: number) => void;
   error: string | null;
   imageExtension: string;
@@ -21,6 +23,7 @@ export function GameBoard({
   gameState,
   myPlayerId,
   isMyTurn,
+  isSpectator,
   onFlipCard,
   error,
   imageExtension,
@@ -29,6 +32,7 @@ export function GameBoard({
   suddenDeathPhase,
   coinTossWinnerId,
 }: Props) {
+  const canInteract = isMyTurn && !isSpectator;
   const remainingCards = gameState.cards.filter((c) => c.state !== 'matched');
   const coinTossWinner = gameState.players.find((p) => p.id === coinTossWinnerId);
 
@@ -122,7 +126,7 @@ export function GameBoard({
               <Card
                 card={card}
                 onClick={() => onFlipCard(card.id)}
-                disabled={!isMyTurn || card.state !== 'face-down'}
+                disabled={!canInteract || card.state !== 'face-down'}
                 imageExtension={imageExtension}
                 justMatched={matchedCardIds.includes(card.id)}
               />
@@ -136,10 +140,14 @@ export function GameBoard({
   }
 
   // --- Normal Grid Play ---
+  const currentPlayer = gameState.players.find((p) => p.id === gameState.currentTurnPlayerId);
   let turnText: string;
   let turnClass = '';
 
-  if (stillYourTurn && isMyTurn) {
+  if (isSpectator) {
+    turnText = `${currentPlayer?.name ?? 'Player'}'s turn`;
+    turnClass = '';
+  } else if (stillYourTurn && isMyTurn) {
     turnText = 'Match! Still your turn — go again!';
     turnClass = 'your-turn still-turn';
   } else if (isMyTurn) {
@@ -154,7 +162,18 @@ export function GameBoard({
   let cardIndex = 0;
   for (let i = 0; i < GRID_CELLS; i++) {
     if (i === CENTER_CELL) {
-      gridCells.push(<div key="center" className="center-cell" />);
+      gridCells.push(
+        <div key="center" className="center-cell">
+          <Topsi
+            gameState={gameState}
+            myPlayerId={myPlayerId}
+            isMyTurn={isMyTurn}
+            matchedCardIds={matchedCardIds}
+            stillYourTurn={stillYourTurn}
+            suddenDeath={suddenDeathPhase !== null}
+          />
+        </div>
+      );
     } else {
       const card = gameState.cards[cardIndex];
       gridCells.push(
@@ -162,7 +181,7 @@ export function GameBoard({
           key={card.id}
           card={card}
           onClick={() => onFlipCard(card.id)}
-          disabled={!isMyTurn || card.state !== 'face-down'}
+          disabled={!canInteract || card.state !== 'face-down'}
           imageExtension={imageExtension}
           justMatched={matchedCardIds.includes(card.id)}
         />
@@ -193,6 +212,23 @@ export function GameBoard({
       </div>
 
       <div className="pairs-remaining">{gameState.pairsRemaining} pairs remaining</div>
+
+      {isSpectator && <div className="spectator-badge">Spectating</div>}
+
+      {!isSpectator && gameState.spectateCode && (
+        <div className="spectate-code">
+          <span>Watch code: <strong>{gameState.spectateCode}</strong></span>
+          <button
+            className="btn-copy"
+            onClick={() => {
+              const url = `${window.location.origin}?watch=${gameState.spectateCode}`;
+              navigator.clipboard.writeText(url).catch(() => {});
+            }}
+          >
+            Copy link
+          </button>
+        </div>
+      )}
     </div>
   );
 }
