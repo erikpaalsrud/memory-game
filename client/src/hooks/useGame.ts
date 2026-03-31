@@ -63,7 +63,7 @@ export function useGame() {
       // Flash the matched cards
       setMatchedCardIds(cardIds);
       clearTimeout(matchGlowTimerRef.current);
-      matchGlowTimerRef.current = setTimeout(() => setMatchedCardIds([]), 1200);
+      matchGlowTimerRef.current = setTimeout(() => setMatchedCardIds([]), 1500);
 
       setGameState((prev) => {
         if (!prev) return prev;
