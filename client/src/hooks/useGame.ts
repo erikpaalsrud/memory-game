@@ -13,6 +13,7 @@ export function useGame() {
   const [imageExtension, setImageExtension] = useState('svg');
   const [matchedCardIds, setMatchedCardIds] = useState<number[]>([]); // cards that just matched (for glow)
   const [stillYourTurn, setStillYourTurn] = useState(false); // true briefly after you match
+  const [suddenDeath, setSuddenDeath] = useState(false);
   const stillTurnTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const matchGlowTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const myPlayerIdRef = useRef<string | null>(null);
@@ -95,6 +96,10 @@ export function useGame() {
       setPhase('finished');
     });
 
+    socket.on('game:sudden-death', () => {
+      setSuddenDeath(true);
+    });
+
     socket.on('game:opponent-disconnected', () => {
       setPhase('opponent-left');
     });
@@ -113,6 +118,7 @@ export function useGame() {
       socket.off('game:pair-mismatch');
       socket.off('game:turn-change');
       socket.off('game:over');
+      socket.off('game:sudden-death');
       socket.off('game:opponent-disconnected');
       socket.off('game:error');
     };
@@ -137,12 +143,14 @@ export function useGame() {
     setPhase('lobby');
     setGameState(null);
     setMyPlayerId(null);
+    setSuddenDeath(false);
   }, [socket]);
 
   const playAgain = useCallback(() => {
     socket.emit('player:play-again');
     setPhase('lobby');
     setGameState(null);
+    setSuddenDeath(false);
   }, [socket]);
 
   const isMyTurn = gameState?.currentTurnPlayerId === myPlayerId;
@@ -157,6 +165,7 @@ export function useGame() {
     imageExtension,
     matchedCardIds,
     stillYourTurn,
+    suddenDeath,
     joinGame,
     flipCard,
     leaveGame,

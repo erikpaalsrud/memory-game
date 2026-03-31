@@ -87,12 +87,100 @@
 
 /* === Game board grid === */
 
+.game-board-wrapper {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
 .game-board {
   display: grid;
-  gap: 10px;
-  max-width: 520px;
+  gap: 8px;
+  max-width: 600px;
   margin: 0 auto;
   padding: 16px;
+  transform-style: preserve-3d;
+  transition: transform 0.5s;
+}
+
+/* === Center empty cell === */
+
+.center-cell {
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px dashed rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.skull-icon {
+  font-size: 2rem;
+  opacity: 0;
+  animation: skullAppear 0.6s ease-out forwards, skullPulse 2s ease-in-out infinite 0.6s;
+}
+
+@keyframes skullAppear {
+  from { opacity: 0; transform: scale(0.3) rotate(-180deg); }
+  to { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes skullPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(255, 50, 50, 0.5)); }
+  50% { transform: scale(1.15); filter: drop-shadow(0 0 12px rgba(255, 50, 50, 0.8)); }
+}
+
+.sudden-death-center {
+  background: rgba(255, 30, 30, 0.1);
+  border-color: rgba(255, 50, 50, 0.3);
+  animation: centerGlow 2s ease-in-out infinite;
+}
+
+@keyframes centerGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 50, 50, 0.2); }
+  50% { box-shadow: 0 0 24px rgba(255, 50, 50, 0.5); }
+}
+
+/* === Sudden Death === */
+
+.sudden-death-banner {
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #ff3333;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 8px 20px;
+  margin-bottom: 8px;
+  animation: bannerFlash 1.5s ease-in-out infinite;
+}
+
+@keyframes bannerFlash {
+  0%, 100% { opacity: 1; text-shadow: 0 0 8px rgba(255, 50, 50, 0.5); }
+  50% { opacity: 0.7; text-shadow: 0 0 20px rgba(255, 50, 50, 0.9); }
+}
+
+.game-board-wrapper.sudden-death .game-board {
+  animation: boardChaos 6s ease-in-out infinite;
+}
+
+@keyframes boardChaos {
+  0%   { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  15%  { transform: rotateX(4deg) rotateY(-6deg) rotateZ(1deg); }
+  30%  { transform: rotateX(-3deg) rotateY(5deg) rotateZ(-2deg); }
+  45%  { transform: rotateX(5deg) rotateY(3deg) rotateZ(1.5deg); }
+  60%  { transform: rotateX(-4deg) rotateY(-4deg) rotateZ(-1deg); }
+  75%  { transform: rotateX(3deg) rotateY(6deg) rotateZ(2deg); }
+  100% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+}
+
+.turn-indicator.sudden-death-turn {
+  color: #ff3333;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  animation: pulse 0.8s ease-in-out infinite;
 }
 
 /* === Scoreboard === */
@@ -412,9 +500,9 @@ button:disabled {
 
 /* === Responsive === */
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
   .game-board {
-    gap: 6px;
+    gap: 5px;
     padding: 8px;
     max-width: 100%;
   }

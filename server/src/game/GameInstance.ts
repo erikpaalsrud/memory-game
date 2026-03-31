@@ -1,5 +1,5 @@
 import { shuffle } from './shuffler.js';
-import { TOTAL_PAIRS } from 'memory-game-shared';
+import { TOTAL_PAIRS, SUDDEN_DEATH_THRESHOLD } from 'memory-game-shared';
 import type {
   CardDefinition,
   CardInstance,
@@ -22,6 +22,7 @@ export type FlipResult =
       label: string;
       matchedCardIds: [number, number];
       playerId: string;
+      suddenDeathActivated: boolean;
     }
   | {
       type: 'match-game-over';
@@ -50,6 +51,7 @@ export class GameInstance {
   public phase: GamePhase;
   public winnerId: string | null;
   public imageExtension: string; // 'png' or 'svg'
+  public suddenDeath = false;
   private flipLocked = false;
 
   constructor(
@@ -117,9 +119,10 @@ export class GameInstance {
       this.pairsRemaining--;
       this.flippedCardIds = [];
 
-      if (this.pairsRemaining === 0) {
+      // Sudden death instant win: first match in sudden death wins
+      if (this.suddenDeath) {
         this.phase = 'finished';
-        this.winnerId = this.determineWinner();
+        this.winnerId = playerId;
         return {
           type: 'match-game-over',
           cardId,
@@ -130,6 +133,27 @@ export class GameInstance {
         };
       }
 
+      // Normal game over
+      if (this.pairsRemaining === 0) {
+        this.phase = 'finished';
+        this.winnerId = this.determineWinner(playerId);
+        return {
+          type: 'match-game-over',
+          cardId,
+          imageId: card.imageId,
+          label: card.label,
+          matchedCardIds: [firstId, secondId],
+          playerId,
+        };
+      }
+
+      // Check if sudden death should activate
+      let suddenDeathActivated = false;
+      if (this.isScoreTied() && this.pairsRemaining <= SUDDEN_DEATH_THRESHOLD) {
+        this.suddenDeath = true;
+        suddenDeathActivated = true;
+      }
+
       return {
         type: 'match',
         cardId,
@@ -137,6 +161,7 @@ export class GameInstance {
         label: card.label,
         matchedCardIds: [firstId, secondId],
         playerId,
+        suddenDeathActivated,
       };
     }
 
@@ -160,11 +185,17 @@ export class GameInstance {
     this.currentTurnIndex = this.currentTurnIndex === 0 ? 1 : 0;
   }
 
-  private determineWinner(): string | null {
+  private isScoreTied(): boolean {
+    return this.players[0].score === this.players[1].score;
+  }
+
+  private determineWinner(lastMatchPlayerId?: string): string | null {
     const [p1, p2] = this.players;
     if (p1.score > p2.score) return p1.id;
     if (p2.score > p1.score) return p2.id;
-    return null; // Draw
+    // Tiebreaker: last player to match wins (no draws allowed)
+    if (lastMatchPlayerId) return lastMatchPlayerId;
+    return null;
   }
 
   markDisconnected(socketId: string): void {
@@ -191,6 +222,7 @@ export class GameInstance {
       flippedCardIds: this.flippedCardIds,
       pairsRemaining: this.pairsRemaining,
       winnerId: this.winnerId,
+      suddenDeath: this.suddenDeath,
     };
   }
 }

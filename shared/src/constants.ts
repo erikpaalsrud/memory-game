@@ -1,7 +1,10 @@
-export const GRID_COLS = 4;
-export const GRID_ROWS = 4;
-export const TOTAL_CARDS = GRID_COLS * GRID_ROWS;
-export const TOTAL_PAIRS = TOTAL_CARDS / 2;
+export const GRID_COLS = 5;
+export const GRID_ROWS = 5;
+export const GRID_CELLS = GRID_COLS * GRID_ROWS; // 25
+export const CENTER_CELL = Math.floor(GRID_CELLS / 2); // position 12 (center of 5x5)
+export const TOTAL_CARDS = GRID_CELLS - 1; // 24 (center is empty)
+export const TOTAL_PAIRS = TOTAL_CARDS / 2; // 12
+export const SUDDEN_DEATH_THRESHOLD = 3; // pairs remaining when sudden death can trigger
 export const CARD_FLIP_DELAY_MS = 800;
 export const MIN_IMAGE_POOL_SIZE = 20;
 export const SERVER_PORT = 3001;

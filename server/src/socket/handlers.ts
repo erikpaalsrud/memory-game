@@ -91,6 +91,9 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
           io.to(roomName).emit('game:state-update', {
             gameState: game.toClientState(),
           });
+          if (result.suddenDeathActivated) {
+            io.to(roomName).emit('game:sudden-death');
+          }
           break;
 
         case 'match-game-over':

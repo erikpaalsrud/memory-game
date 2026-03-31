@@ -1,6 +1,6 @@
 import { Card } from './Card';
 import { ScoreBoard } from './ScoreBoard';
-import { GRID_COLS } from 'memory-game-shared';
+import { GRID_COLS, GRID_CELLS, CENTER_CELL } from 'memory-game-shared';
 import type { ClientGameState } from 'memory-game-shared';
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
   imageExtension: string;
   matchedCardIds: number[];
   stillYourTurn: boolean;
+  suddenDeath: boolean;
 }
 
 export function GameBoard({
@@ -23,11 +24,20 @@ export function GameBoard({
   imageExtension,
   matchedCardIds,
   stillYourTurn,
+  suddenDeath,
 }: Props) {
   let turnText: string;
   let turnClass = '';
 
-  if (stillYourTurn && isMyTurn) {
+  if (suddenDeath) {
+    if (isMyTurn) {
+      turnText = 'SUDDEN DEATH — your turn!';
+      turnClass = 'your-turn sudden-death-turn';
+    } else {
+      turnText = "SUDDEN DEATH — opponent's turn...";
+      turnClass = 'sudden-death-turn';
+    }
+  } else if (stillYourTurn && isMyTurn) {
     turnText = 'Match! Still your turn — go again!';
     turnClass = 'your-turn still-turn';
   } else if (isMyTurn) {
@@ -35,6 +45,32 @@ export function GameBoard({
     turnClass = 'your-turn';
   } else {
     turnText = "Opponent's turn...";
+  }
+
+  // Build grid cells: 25 positions, with center empty
+  const gridCells = [];
+  let cardIndex = 0;
+  for (let i = 0; i < GRID_CELLS; i++) {
+    if (i === CENTER_CELL) {
+      gridCells.push(
+        <div key="center" className={`center-cell ${suddenDeath ? 'sudden-death-center' : ''}`}>
+          {suddenDeath && <span className="skull-icon">&#9760;</span>}
+        </div>
+      );
+    } else {
+      const card = gameState.cards[cardIndex];
+      gridCells.push(
+        <Card
+          key={card.id}
+          card={card}
+          onClick={() => onFlipCard(card.id)}
+          disabled={!isMyTurn || card.state !== 'face-down'}
+          imageExtension={imageExtension}
+          justMatched={matchedCardIds.includes(card.id)}
+        />
+      );
+      cardIndex++;
+    }
   }
 
   return (
@@ -51,20 +87,19 @@ export function GameBoard({
 
       {error && <div className="error-message">{error}</div>}
 
-      <div
-        className="game-board"
-        style={{ gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)` }}
-      >
-        {gameState.cards.map((card) => (
-          <Card
-            key={card.id}
-            card={card}
-            onClick={() => onFlipCard(card.id)}
-            disabled={!isMyTurn || card.state !== 'face-down'}
-            imageExtension={imageExtension}
-            justMatched={matchedCardIds.includes(card.id)}
-          />
-        ))}
+      {suddenDeath && (
+        <div className="sudden-death-banner">
+          SUDDEN DEATH — Next match wins!
+        </div>
+      )}
+
+      <div className={`game-board-wrapper ${suddenDeath ? 'sudden-death' : ''}`}>
+        <div
+          className="game-board"
+          style={{ gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)` }}
+        >
+          {gridCells}
+        </div>
       </div>
 
       <div className="pairs-remaining">

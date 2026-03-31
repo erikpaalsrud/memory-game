@@ -31,6 +31,7 @@ export interface GameState {
   flippedCardIds: number[];
   pairsRemaining: number;
   winnerId: string | null;
+  suddenDeath: boolean;
 }
 
 // === Client receives a masked version ===
@@ -50,6 +51,7 @@ export interface ClientGameState {
   flippedCardIds: number[];
   pairsRemaining: number;
   winnerId: string | null;
+  suddenDeath: boolean;
 }
 
 // === Socket Event Payloads ===
@@ -69,6 +71,7 @@ export interface ServerToClientEvents {
   'game:pair-mismatch': (data: { cardIds: [number, number] }) => void;
   'game:turn-change': (data: { currentTurnPlayerId: string }) => void;
   'game:over': (data: { gameState: ClientGameState }) => void;
+  'game:sudden-death': () => void;
   'game:opponent-disconnected': () => void;
   'game:error': (data: { message: string }) => void;
 }
