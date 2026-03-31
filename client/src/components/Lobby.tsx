@@ -26,7 +26,13 @@ export function Lobby({ onJoin, isConnected }: Props) {
       </div>
 
       <div className="lobby-hero">
-        <h1 className="lobby-title">Memory</h1>
+        <h1 className="lobby-title">
+          {'Mememory'.split('').map((letter, i) => (
+            <span key={i} className="title-letter" style={{ animationDelay: `${i * 0.08}s` }}>
+              {letter}
+            </span>
+          ))}
+        </h1>
         <p className="lobby-tagline">The classic card game — now multiplayer</p>
       </div>
 

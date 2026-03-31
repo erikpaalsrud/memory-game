@@ -1,8 +1,10 @@
 export function Header() {
   return (
     <header className="header">
-      <h1>Memory Game</h1>
-      <p className="subtitle">Find all the matching pairs</p>
+      <h1 className="header-title">
+        <span className="header-meme">Meme</span>
+        <span className="header-mory">mory</span>
+      </h1>
     </header>
   );
 }
