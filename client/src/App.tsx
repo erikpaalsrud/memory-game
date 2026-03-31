@@ -1,4 +1,6 @@
+import { useEffect, useRef } from 'react';
 import { useGame } from './hooks/useGame';
+import { useAudio } from './hooks/useAudio';
 import { Header } from './components/Header';
 import { Lobby } from './components/Lobby';
 import { WaitingRoom } from './components/WaitingRoom';
@@ -9,10 +11,42 @@ import './styles/card.css';
 
 function App() {
   const game = useGame();
+  const audio = useAudio();
+  const prevPhaseRef = useRef(game.phase);
+
+  // Drive music based on phase transitions
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    const curr = game.phase;
+    prevPhaseRef.current = curr;
+
+    if (curr === 'lobby' || curr === 'waiting') {
+      // Title music for lobby/waiting
+      audio.stopBattle();
+      audio.playTitle();
+    } else if (curr === 'versus') {
+      // Battle music starts at versus screen
+      audio.playBattle();
+    } else if (curr === 'finished' || curr === 'opponent-left') {
+      // Keep battle music running on game over (feels natural)
+    } else if (curr === 'playing' && prev === 'lobby') {
+      // Edge case: if somehow we skip versus
+      audio.playBattle();
+    }
+  }, [game.phase]);
 
   return (
     <div className="app">
       <Header />
+
+      <button
+        className="mute-btn"
+        onClick={audio.toggleMute}
+        aria-label={audio.muted ? 'Unmute' : 'Mute'}
+        title={audio.muted ? 'Unmute' : 'Mute'}
+      >
+        {audio.muted ? '\u{1F507}' : '\u{1F50A}'}
+      </button>
 
       {!game.isConnected && game.phase === 'lobby' && (
         <div className="connection-status">Connecting to server...</div>

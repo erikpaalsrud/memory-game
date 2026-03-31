@@ -29,8 +29,9 @@ if (!isProd) {
   app.use(cors());
 }
 
-// Serve card images as static files
+// Serve static assets
 app.use('/cards', express.static(path.join(__dirname, '../public/cards')));
+app.use('/music', express.static(path.join(__dirname, '../public/music')));
 
 // In production, serve the built Vite client
 if (isProd) {
@@ -39,7 +40,7 @@ if (isProd) {
 
   // SPA fallback — serve index.html for any non-API/non-asset routes
   app.get('*', (_req, res, next) => {
-    if (_req.path.startsWith('/api') || _req.path.startsWith('/cards') || _req.path.startsWith('/socket.io')) {
+    if (_req.path.startsWith('/api') || _req.path.startsWith('/cards') || _req.path.startsWith('/music') || _req.path.startsWith('/socket.io')) {
       return next();
     }
     res.sendFile(path.join(clientDist, 'index.html'));

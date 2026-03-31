@@ -620,6 +620,33 @@ button:disabled {
   font-size: 0.9rem;
 }
 
+/* === Mute button === */
+
+.mute-btn {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.mute-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
 /* === Connection status === */
 
 .connection-status {
