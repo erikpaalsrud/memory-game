@@ -117,28 +117,17 @@ export function GameBoard({
         <div className="sd-banner">SUDDEN DEATH — Next match wins!</div>
 
         <div className="sd-hand">
-          {remainingCards.map((card, i) => {
-            const n = remainingCards.length;
-            const angle = (i - (n - 1) / 2) * 10;
-            return (
-              <div
-                key={card.id}
-                className="sd-hand-slot"
-                style={{
-                  transform: `rotate(${angle}deg)`,
-                  zIndex: i,
-                } as React.CSSProperties}
-              >
-                <Card
-                  card={card}
-                  onClick={() => onFlipCard(card.id)}
-                  disabled={!isMyTurn || card.state !== 'face-down'}
-                  imageExtension={imageExtension}
-                  justMatched={matchedCardIds.includes(card.id)}
-                />
-              </div>
-            );
-          })}
+          {remainingCards.map((card) => (
+            <div key={card.id} className="sd-hand-slot">
+              <Card
+                card={card}
+                onClick={() => onFlipCard(card.id)}
+                disabled={!isMyTurn || card.state !== 'face-down'}
+                imageExtension={imageExtension}
+                justMatched={matchedCardIds.includes(card.id)}
+              />
+            </div>
+          ))}
         </div>
 
         <div className="pairs-remaining">{gameState.pairsRemaining} pairs remaining</div>

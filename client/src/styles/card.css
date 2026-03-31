@@ -279,33 +279,28 @@
 }
 
 .sd-hand {
-  position: relative;
-  height: 260px;
-  max-width: 500px;
-  margin: 0 auto;
   display: flex;
-  align-items: flex-end;
   justify-content: center;
+  gap: 14px;
+  max-width: 520px;
+  margin: 20px auto;
+  padding: 16px;
+  flex-wrap: wrap;
 }
 
 .sd-hand-slot {
-  position: absolute;
-  width: 90px;
-  height: 90px;
-  bottom: 40px;
-  left: 50%;
-  margin-left: -45px;
-  transform-origin: 50% 250%;
+  width: 100px;
+  height: 100px;
   transition: transform 0.3s ease;
 }
 
 .sd-hand-slot:hover {
-  z-index: 10 !important;
+  z-index: 10;
 }
 
 .sd-hand-slot .card-container {
-  width: 90px;
-  height: 90px;
+  width: 100px;
+  height: 100px;
 }
 
 .turn-indicator.sd-turn {
@@ -659,15 +654,19 @@ button:disabled {
     flex-direction: column;
   }
 
+  .sd-hand {
+    gap: 10px;
+    padding: 12px;
+  }
+
   .sd-hand-slot {
-    width: 70px;
-    height: 70px;
-    margin-left: -35px;
+    width: 80px;
+    height: 80px;
   }
 
   .sd-hand-slot .card-container {
-    width: 70px;
-    height: 70px;
+    width: 80px;
+    height: 80px;
   }
 
   .sd-title {
