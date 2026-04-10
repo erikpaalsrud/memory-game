@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "dotenv": "^16.4.0"
+    "dotenv": "^16.4.0",
+    "memory-game-shared": "*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

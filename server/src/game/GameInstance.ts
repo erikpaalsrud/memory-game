@@ -6,6 +6,7 @@ import type {
   Player,
   GamePhase,
   ClientGameState,
+  CategoryId,
 } from 'memory-game-shared';
 
 export interface QueuedPlayer {
@@ -63,8 +64,10 @@ export class GameInstance {
   public spectateCode: string;
   public suddenDeath = false;
   public rematchRequests = new Set<string>();
+  public category: CategoryId | null = null;
+  public categorySelectorId: string | null = null;
   private flipLocked = false;
-  private imagePool: CardDefinition[];
+  private imagePool: CardDefinition[] = [];
 
   private static generateCode(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 to avoid confusion
@@ -77,25 +80,43 @@ export class GameInstance {
     gameId: string,
     p1: QueuedPlayer,
     p2: QueuedPlayer,
-    imagePool: CardDefinition[],
-    imageExtension: string
+    imageExtension: string,
   ) {
     this.gameId = gameId;
     this.spectateCode = GameInstance.generateCode();
-    this.imagePool = imagePool;
     this.players = [
       { id: p1.socketId, name: p1.name, score: 0, connected: true },
       { id: p2.socketId, name: p2.name, score: 0, connected: true },
     ];
+
+    // Coin flip happens up front. The non-starter is the player who picks the
+    // category — fairness compensation for not getting the first move.
     this.currentTurnIndex = Math.random() < 0.5 ? 0 : 1;
+    this.categorySelectorId = this.players[1 - this.currentTurnIndex].id;
+
     this.flippedCardIds = [];
     this.pairsRemaining = TOTAL_PAIRS;
-    this.phase = 'playing';
+    this.phase = 'selecting-category';
     this.winnerId = null;
     this.imageExtension = imageExtension;
+    this.cards = [];
+  }
 
-    // Pick TOTAL_PAIRS random images, create pairs, shuffle
-    const selected = shuffle([...imagePool]).slice(0, TOTAL_PAIRS);
+  /**
+   * Called once the selector picks a category. Locks in the pool, deals the
+   * cards, and shifts the game into the playing phase. Idempotent guard prevents
+   * double-selection if both players race the event.
+   */
+  selectCategory(category: CategoryId, pool: CardDefinition[]): { ok: true } | { ok: false; reason: string } {
+    if (this.phase !== 'selecting-category') return { ok: false, reason: 'Category already selected' };
+    if (pool.length < TOTAL_PAIRS) {
+      return { ok: false, reason: `Category "${category}" has too few cards (${pool.length}/${TOTAL_PAIRS})` };
+    }
+
+    this.category = category;
+    this.imagePool = pool;
+
+    const selected = shuffle([...pool]).slice(0, TOTAL_PAIRS);
     const cardPairs = [...selected, ...selected];
     const shuffled = shuffle(cardPairs);
 
@@ -105,6 +126,8 @@ export class GameInstance {
       label: def.label,
       state: 'face-down' as const,
     }));
+    this.phase = 'playing';
+    return { ok: true };
   }
 
   get currentTurnPlayerId(): string {
@@ -112,7 +135,7 @@ export class GameInstance {
   }
 
   flipCard(playerId: string, cardId: number): FlipResult {
-    if (this.phase !== 'playing') return { type: 'error', message: 'Game is over' };
+    if (this.phase !== 'playing') return { type: 'error', message: 'Game is not in play' };
     if (playerId !== this.currentTurnPlayerId) return { type: 'error', message: 'Not your turn' };
     if (this.flipLocked) return { type: 'error', message: 'Wait for cards to flip back' };
     if (cardId < 0 || cardId >= this.cards.length) return { type: 'error', message: 'Invalid card' };
@@ -247,7 +270,7 @@ export class GameInstance {
   markDisconnected(socketId: string): void {
     const player = this.players.find((p) => p.id === socketId);
     if (player) player.connected = false;
-    if (this.phase === 'playing') {
+    if (this.phase === 'playing' || this.phase === 'selecting-category') {
       this.phase = 'finished';
       this.winnerId = this.players.find((p) => p.id !== socketId)?.id ?? null;
     }
@@ -270,6 +293,8 @@ export class GameInstance {
       pairsRemaining: this.pairsRemaining,
       winnerId: this.winnerId,
       suddenDeath: this.suddenDeath,
+      category: this.category,
+      categorySelectorId: this.categorySelectorId,
     };
   }
 }

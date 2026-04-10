@@ -1,14 +1,15 @@
-import type { ClientCardInstance } from 'memory-game-shared';
+import type { CategoryId, ClientCardInstance } from 'memory-game-shared';
 
 interface Props {
   card: ClientCardInstance;
+  category: CategoryId | null;
   onClick: () => void;
   disabled: boolean;
   imageExtension: string;
   justMatched: boolean;
 }
 
-export function Card({ card, onClick, disabled, imageExtension, justMatched }: Props) {
+export function Card({ card, category, onClick, disabled, imageExtension, justMatched }: Props) {
   const isRevealed = card.state === 'face-up' || card.state === 'matched';
   const ext = imageExtension;
 
@@ -20,6 +21,11 @@ export function Card({ card, onClick, disabled, imageExtension, justMatched }: P
   ]
     .filter(Boolean)
     .join(' ');
+
+  // Cards live under per-category folders. The card-back is shared across categories.
+  const faceSrc = card.imageId && category
+    ? `/cards/${category}/${card.imageId}.${ext}`
+    : null;
 
   return (
     <div
@@ -40,9 +46,9 @@ export function Card({ card, onClick, disabled, imageExtension, justMatched }: P
           <img src={`/cards/card-back.${ext}`} alt="Card back" draggable={false} />
         </div>
         <div className="card-back-face">
-          {card.imageId && (
+          {faceSrc && (
             <img
-              src={`/cards/${card.imageId}.${ext}`}
+              src={faceSrc}
               alt={card.label ?? ''}
               draggable={false}
             />

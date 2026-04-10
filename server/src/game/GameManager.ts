@@ -1,21 +1,22 @@
 import { v4 as uuid } from 'uuid';
 import { GameInstance, type QueuedPlayer } from './GameInstance.js';
-import { loadImagePool, getCardExtension } from '../images/imagePool.js';
-import type { CardDefinition } from 'memory-game-shared';
+import { loadCategoryPools, CARD_IMAGE_EXTENSION, type CategoryPools } from '../images/imagePool.js';
+import {
+  CATEGORY_IDS,
+  TOTAL_PAIRS,
+  type CategoryId,
+} from 'memory-game-shared';
 
 export class GameManager {
   private queue: QueuedPlayer[] = [];
   private games = new Map<string, GameInstance>();
   private playerToGame = new Map<string, string>();
-  private imagePool: CardDefinition[] = [];
-  private imageExtension = 'svg';
+  private categoryPools: CategoryPools;
 
   constructor() {
-    this.imagePool = loadImagePool();
-    if (this.imagePool.length > 0) {
-      this.imageExtension = getCardExtension(this.imagePool[0].imageId);
-    }
-    console.log(`Image pool: ${this.imagePool.length} cards (${this.imageExtension})`);
+    this.categoryPools = loadCategoryPools();
+    const summary = CATEGORY_IDS.map((id) => `${id}=${this.categoryPools[id].length}`).join(', ');
+    console.log(`Image pools: ${summary} (${CARD_IMAGE_EXTENSION})`);
   }
 
   addToQueue(socketId: string, name: string): GameInstance | null {
@@ -39,12 +40,35 @@ export class GameManager {
 
   private createGame(p1: QueuedPlayer, p2: QueuedPlayer): GameInstance {
     const gameId = uuid();
-    const game = new GameInstance(gameId, p1, p2, this.imagePool, this.imageExtension);
+    const game = new GameInstance(gameId, p1, p2, CARD_IMAGE_EXTENSION);
     this.games.set(gameId, game);
     this.playerToGame.set(p1.socketId, gameId);
     this.playerToGame.set(p2.socketId, gameId);
-    console.log(`Game created: ${gameId} — ${p1.name} vs ${p2.name}`);
+    console.log(`Game created: ${gameId} — ${p1.name} vs ${p2.name} (selector=${game.categorySelectorId})`);
     return game;
+  }
+
+  /**
+   * Resolve a category pick into a started game. Validates the requesting
+   * player is the chosen selector, the category exists, and the pool is full.
+   */
+  finalizeCategory(
+    socketId: string,
+    category: CategoryId,
+  ): { ok: true; game: GameInstance } | { ok: false; reason: string } {
+    const game = this.getGameForPlayer(socketId);
+    if (!game) return { ok: false, reason: 'Not in a game' };
+    if (game.phase !== 'selecting-category') return { ok: false, reason: 'Game already started' };
+    if (game.categorySelectorId !== socketId) return { ok: false, reason: 'You are not the category selector' };
+
+    const pool = this.categoryPools[category];
+    if (!pool || pool.length < TOTAL_PAIRS) {
+      return { ok: false, reason: `Category "${category}" is not playable` };
+    }
+
+    const result = game.selectCategory(category, pool);
+    if (!result.ok) return result;
+    return { ok: true, game };
   }
 
   createRematch(oldGame: GameInstance): GameInstance {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ClientGameState } from 'memory-game-shared';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface Props {
   gameState: ClientGameState;
@@ -61,6 +62,7 @@ function SpriteAnimation({
 }
 
 export function VersusScreen({ gameState, myPlayerId }: Props) {
+  const { t } = useTranslation();
   const [p1, p2] = gameState.players;
   const startsFirst = gameState.players.find(
     (p) => p.id === gameState.currentTurnPlayerId
@@ -114,7 +116,7 @@ export function VersusScreen({ gameState, myPlayerId }: Props) {
       <div className="vs-players">
         <div className={`vs-player vs-left ${p1.id === myPlayerId ? 'is-me' : ''}`}>
           <span className="vs-player-name">{p1.name}</span>
-          {p1.id === myPlayerId && <span className="vs-player-you">you</span>}
+          {p1.id === myPlayerId && <span className="vs-player-you">{t('versus.you')}</span>}
         </div>
 
         <div className="vs-clash">
@@ -128,7 +130,7 @@ export function VersusScreen({ gameState, myPlayerId }: Props) {
 
         <div className={`vs-player vs-right ${p2.id === myPlayerId ? 'is-me' : ''}`}>
           <span className="vs-player-name">{p2.name}</span>
-          {p2.id === myPlayerId && <span className="vs-player-you">you</span>}
+          {p2.id === myPlayerId && <span className="vs-player-you">{t('versus.you')}</span>}
         </div>
       </div>
 
@@ -145,11 +147,11 @@ export function VersusScreen({ gameState, myPlayerId }: Props) {
       <div className="versus-result">
         <span className="versus-starter-name">{startsFirst?.name}</span>
         <span className="versus-starts-text">
-          {isMe ? 'You start!' : 'starts first'}
+          {isMe ? t('versus.youStart') : t('versus.startsFirst')}
         </span>
       </div>
 
-      <div className="versus-ready">Get ready...</div>
+      <div className="versus-ready">{t('versus.getReady')}</div>
     </div>
   );
 }

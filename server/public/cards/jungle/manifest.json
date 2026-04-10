@@ -1,0 +1,74 @@
+[
+  {
+    "imageId": "card-001",
+    "label": "tiger"
+  },
+  {
+    "imageId": "card-002",
+    "label": "gorilla"
+  },
+  {
+    "imageId": "card-003",
+    "label": "leopard"
+  },
+  {
+    "imageId": "card-004",
+    "label": "macaw"
+  },
+  {
+    "imageId": "card-005",
+    "label": "tree frog"
+  },
+  {
+    "imageId": "card-006",
+    "label": "baby elephant"
+  },
+  {
+    "imageId": "card-007",
+    "label": "sloth"
+  },
+  {
+    "imageId": "card-008",
+    "label": "toucan"
+  },
+  {
+    "imageId": "card-009",
+    "label": "python"
+  },
+  {
+    "imageId": "card-010",
+    "label": "monkey"
+  },
+  {
+    "imageId": "card-011",
+    "label": "chameleon"
+  },
+  {
+    "imageId": "card-012",
+    "label": "okapi"
+  },
+  {
+    "imageId": "card-013",
+    "label": "jaguar"
+  },
+  {
+    "imageId": "card-014",
+    "label": "quetzal"
+  },
+  {
+    "imageId": "card-015",
+    "label": "tapir"
+  },
+  {
+    "imageId": "card-016",
+    "label": "fruit bat"
+  },
+  {
+    "imageId": "card-017",
+    "label": "anteater"
+  },
+  {
+    "imageId": "card-018",
+    "label": "morpho butterfly"
+  }
+]

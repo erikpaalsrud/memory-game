@@ -1,3 +1,5 @@
+import type { CategoryId } from './categories';
+
 // === Card Types ===
 export interface CardDefinition {
   imageId: string;
@@ -20,7 +22,7 @@ export interface Player {
 }
 
 // === Game State ===
-export type GamePhase = 'waiting' | 'playing' | 'finished';
+export type GamePhase = 'waiting' | 'selecting-category' | 'playing' | 'finished';
 
 export interface GameState {
   gameId: string;
@@ -32,6 +34,9 @@ export interface GameState {
   pairsRemaining: number;
   winnerId: string | null;
   suddenDeath: boolean;
+  category: CategoryId | null;
+  // The player who picks the category — the loser of the initial coin flip.
+  categorySelectorId: string | null;
 }
 
 // === Client receives a masked version ===
@@ -53,6 +58,8 @@ export interface ClientGameState {
   pairsRemaining: number;
   winnerId: string | null;
   suddenDeath: boolean;
+  category: CategoryId | null;
+  categorySelectorId: string | null;
 }
 
 // === Socket Event Payloads ===
@@ -62,11 +69,16 @@ export interface ClientToServerEvents {
   'player:leave': () => void;
   'player:play-again': () => void;
   'player:rematch': () => void;
+  'player:select-category': (data: { category: CategoryId }) => void;
   'spectator:join': (data: { spectateCode: string }) => void;
 }
 
 export interface ServerToClientEvents {
   'game:waiting': () => void;
+  'game:category-selecting': (data: {
+    gameState: ClientGameState;
+    yourPlayerId: string;
+  }) => void;
   'game:start': (data: { gameState: ClientGameState; yourPlayerId: string; imageExtension: string }) => void;
   'game:state-update': (data: { gameState: ClientGameState }) => void;
   'game:card-flipped': (data: { cardId: number; imageId: string; label: string }) => void;
@@ -76,6 +88,7 @@ export interface ServerToClientEvents {
   'game:over': (data: { gameState: ClientGameState }) => void;
   'game:sudden-death': (data: { coinTossWinnerId: string }) => void;
   'game:rematch-waiting': () => void;
+  'game:rematch-requested': () => void;
   'game:spectate-start': (data: { gameState: ClientGameState; spectateCode: string; imageExtension: string }) => void;
   'game:spectate-ended': () => void;
   'game:opponent-disconnected': () => void;

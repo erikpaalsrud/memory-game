@@ -1,12 +1,56 @@
 import type { Server, Socket } from 'socket.io';
-import { CARD_FLIP_DELAY_MS } from 'memory-game-shared';
+import { CARD_FLIP_DELAY_MS, isCategoryId } from 'memory-game-shared';
 import type { ClientToServerEvents, ServerToClientEvents } from 'memory-game-shared';
 import type { GameManager } from '../game/GameManager.js';
+import type { GameInstance } from '../game/GameInstance.js';
 
 type TypedServer = Server<ClientToServerEvents, ServerToClientEvents>;
 type TypedSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 
 export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): void {
+  /**
+   * Helper: emit category-selecting to both players. The selector sees the
+   * picker; the other player sees a "waiting" view. The client decides which
+   * to render based on (yourPlayerId === gameState.categorySelectorId).
+   */
+  function broadcastCategorySelecting(io: TypedServer, game: GameInstance) {
+    const [p1, p2] = game.players;
+    const p1Socket = io.sockets.sockets.get(p1.id);
+    const p2Socket = io.sockets.sockets.get(p2.id);
+
+    const roomName = `game:${game.gameId}`;
+    p1Socket?.join(roomName);
+    p2Socket?.join(roomName);
+
+    const clientState = game.toClientState();
+    p1Socket?.emit('game:category-selecting', {
+      gameState: clientState,
+      yourPlayerId: p1.id,
+    });
+    p2Socket?.emit('game:category-selecting', {
+      gameState: clientState,
+      yourPlayerId: p2.id,
+    });
+  }
+
+  function broadcastGameStart(io: TypedServer, game: GameInstance) {
+    const [p1, p2] = game.players;
+    const p1Socket = io.sockets.sockets.get(p1.id);
+    const p2Socket = io.sockets.sockets.get(p2.id);
+
+    const clientState = game.toClientState();
+    p1Socket?.emit('game:start', {
+      gameState: clientState,
+      yourPlayerId: p1.id,
+      imageExtension: game.imageExtension,
+    });
+    p2Socket?.emit('game:start', {
+      gameState: clientState,
+      yourPlayerId: p2.id,
+      imageExtension: game.imageExtension,
+    });
+  }
+
   io.on('connection', (socket: TypedSocket) => {
     console.log(`Connected: ${socket.id}`);
 
@@ -30,28 +74,24 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
         return;
       }
 
-      // Game created — join both players to a Socket.io room
-      const [p1, p2] = game.players;
-      const p1Socket = io.sockets.sockets.get(p1.id);
-      const p2Socket = io.sockets.sockets.get(p2.id);
+      // Game created — drop both players into category selection.
+      broadcastCategorySelecting(io, game);
+    });
 
-      const roomName = `game:${game.gameId}`;
-      p1Socket?.join(roomName);
-      p2Socket?.join(roomName);
+    // --- CATEGORY SELECTION ---
+    socket.on('player:select-category', ({ category }) => {
+      if (!isCategoryId(category)) {
+        socket.emit('game:error', { message: 'Invalid category' });
+        return;
+      }
 
-      // Send game start with image extension info
-      const clientState = game.toClientState();
+      const result = gameManager.finalizeCategory(socket.id, category);
+      if (!result.ok) {
+        socket.emit('game:error', { message: result.reason });
+        return;
+      }
 
-      p1Socket?.emit('game:start', {
-        gameState: clientState,
-        yourPlayerId: p1.id,
-        imageExtension: game.imageExtension,
-      });
-      p2Socket?.emit('game:start', {
-        gameState: clientState,
-        yourPlayerId: p2.id,
-        imageExtension: game.imageExtension,
-      });
+      broadcastGameStart(io, result.game);
     });
 
     // --- CARD FLIP ---
@@ -157,40 +197,35 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
       const game = gameManager.getGameForPlayer(socket.id);
       if (!game || game.phase !== 'finished') return;
 
+      const wasNew = !game.rematchRequests.has(socket.id);
       game.rematchRequests.add(socket.id);
 
-      // If only one player requested, tell them to wait
+      // If only one player requested, tell them to wait AND tell the other
+      // player that a rematch was requested so they can accept.
       if (game.rematchRequests.size < 2) {
         socket.emit('game:rematch-waiting');
+        if (wasNew) {
+          const opponent = game.players.find((p) => p.id !== socket.id);
+          if (opponent) {
+            io.sockets.sockets.get(opponent.id)?.emit('game:rematch-requested');
+          }
+        }
         return;
       }
 
-      // Both players want a rematch — create new game
+      // Both players want a rematch — create new game and re-enter category selection
       const oldRoom = `game:${game.gameId}`;
       const newGame = gameManager.createRematch(game);
-      const roomName = `game:${newGame.gameId}`;
 
       const [p1, p2] = newGame.players;
       const p1Socket = io.sockets.sockets.get(p1.id);
       const p2Socket = io.sockets.sockets.get(p2.id);
 
-      // Leave old room, join new room
+      // Leave old room
       p1Socket?.leave(oldRoom);
       p2Socket?.leave(oldRoom);
-      p1Socket?.join(roomName);
-      p2Socket?.join(roomName);
 
-      const clientState = newGame.toClientState();
-      p1Socket?.emit('game:start', {
-        gameState: clientState,
-        yourPlayerId: p1.id,
-        imageExtension: newGame.imageExtension,
-      });
-      p2Socket?.emit('game:start', {
-        gameState: clientState,
-        yourPlayerId: p2.id,
-        imageExtension: newGame.imageExtension,
-      });
+      broadcastCategorySelecting(io, newGame);
     });
 
     // --- SPECTATE ---

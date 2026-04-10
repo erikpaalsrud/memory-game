@@ -1,0 +1,74 @@
+[
+  {
+    "imageId": "card-001",
+    "label": "unicorn"
+  },
+  {
+    "imageId": "card-002",
+    "label": "red dragon"
+  },
+  {
+    "imageId": "card-003",
+    "label": "griffin"
+  },
+  {
+    "imageId": "card-004",
+    "label": "phoenix"
+  },
+  {
+    "imageId": "card-005",
+    "label": "pegasus"
+  },
+  {
+    "imageId": "card-006",
+    "label": "basilisk"
+  },
+  {
+    "imageId": "card-007",
+    "label": "minotaur"
+  },
+  {
+    "imageId": "card-008",
+    "label": "centaur"
+  },
+  {
+    "imageId": "card-009",
+    "label": "cerberus"
+  },
+  {
+    "imageId": "card-010",
+    "label": "nine-tail fox"
+  },
+  {
+    "imageId": "card-011",
+    "label": "kraken"
+  },
+  {
+    "imageId": "card-012",
+    "label": "jackalope"
+  },
+  {
+    "imageId": "card-013",
+    "label": "stone gargoyle"
+  },
+  {
+    "imageId": "card-014",
+    "label": "hippogriff"
+  },
+  {
+    "imageId": "card-015",
+    "label": "chimera"
+  },
+  {
+    "imageId": "card-016",
+    "label": "frost wyvern"
+  },
+  {
+    "imageId": "card-017",
+    "label": "wood nymph"
+  },
+  {
+    "imageId": "card-018",
+    "label": "thunderbird"
+  }
+]

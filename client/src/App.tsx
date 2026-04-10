@@ -4,14 +4,18 @@ import { useAudio } from './hooks/useAudio';
 import { Header } from './components/Header';
 import { Lobby } from './components/Lobby';
 import { WaitingRoom } from './components/WaitingRoom';
+import { CategoryPicker } from './components/CategoryPicker';
 import { VersusScreen } from './components/VersusScreen';
 import { GameBoard } from './components/GameBoard';
 import { GameOver } from './components/GameOver';
+import { LanguageToggle } from './components/LanguageToggle';
+import { useTranslation } from './i18n/LanguageContext';
 import './styles/card.css';
 
 function App() {
   const game = useGame();
   const audio = useAudio();
+  const { t } = useTranslation();
   const prevPhaseRef = useRef(game.phase);
 
   // Start title music on first interaction
@@ -35,7 +39,7 @@ function App() {
     const curr = game.phase;
     prevPhaseRef.current = curr;
 
-    if (curr === 'lobby' || curr === 'waiting') {
+    if (curr === 'lobby' || curr === 'waiting' || curr === 'category-select') {
       audio.stopBattle();
       audio.playTitle();
     } else if (curr === 'versus') {
@@ -73,17 +77,20 @@ function App() {
     <div className="app">
       {showHeader && <Header />}
 
-      <button
-        className="mute-btn"
-        onClick={audio.toggleMute}
-        aria-label={audio.muted ? 'Unmute' : 'Mute'}
-        title={audio.muted ? 'Unmute' : 'Mute'}
-      >
-        {audio.muted ? '\u{1F507}' : '\u{1F50A}'}
-      </button>
+      <div className="top-controls">
+        <LanguageToggle />
+        <button
+          className="mute-btn"
+          onClick={audio.toggleMute}
+          aria-label={audio.muted ? 'Unmute' : 'Mute'}
+          title={audio.muted ? 'Unmute' : 'Mute'}
+        >
+          {audio.muted ? '\u{1F507}' : '\u{1F50A}'}
+        </button>
+      </div>
 
       {!game.isConnected && game.phase === 'lobby' && (
-        <div className="connection-status">Connecting to server...</div>
+        <div className="connection-status">{t('app.connecting')}</div>
       )}
 
       {game.phase === 'lobby' && (
@@ -96,6 +103,14 @@ function App() {
 
       {game.phase === 'waiting' && (
         <WaitingRoom onCancel={game.leaveGame} />
+      )}
+
+      {game.phase === 'category-select' && game.gameState && game.myPlayerId && (
+        <CategoryPicker
+          gameState={game.gameState}
+          myPlayerId={game.myPlayerId}
+          onSelect={game.selectCategory}
+        />
       )}
 
       {game.phase === 'versus' && game.gameState && (
@@ -127,6 +142,7 @@ function App() {
           myPlayerId={game.myPlayerId}
           opponentLeft={game.phase === 'opponent-left'}
           rematchWaiting={game.rematchWaiting}
+          opponentWantsRematch={game.opponentWantsRematch}
           onRematch={game.requestRematch}
           onPlayAgain={game.playAgain}
           onLeave={game.leaveGame}

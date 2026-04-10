@@ -1,8 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { ClientGameState } from 'memory-game-shared';
+import type { CategoryId, ClientGameState } from 'memory-game-shared';
 import { useSocket } from './useSocket';
 
-export type AppPhase = 'lobby' | 'waiting' | 'versus' | 'playing' | 'finished' | 'opponent-left' | 'spectating';
+export type AppPhase =
+  | 'lobby'
+  | 'waiting'
+  | 'category-select'
+  | 'versus'
+  | 'playing'
+  | 'finished'
+  | 'opponent-left'
+  | 'spectating';
 export type SuddenDeathPhase = null | 'transition' | 'coin-toss' | 'playing';
 
 export function useGame() {
@@ -17,6 +25,7 @@ export function useGame() {
   const [suddenDeathPhase, setSuddenDeathPhase] = useState<SuddenDeathPhase>(null);
   const [coinTossWinnerId, setCoinTossWinnerId] = useState<string | null>(null);
   const [rematchWaiting, setRematchWaiting] = useState(false);
+  const [opponentWantsRematch, setOpponentWantsRematch] = useState(false);
   const [isSpectator, setIsSpectator] = useState(false);
   const [sfxEvent, setSfxEvent] = useState<{ type: string; seq: number }>({ type: '', seq: 0 });
   const stillTurnTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -38,12 +47,25 @@ export function useGame() {
   useEffect(() => {
     socket.on('game:waiting', () => setPhase('waiting'));
 
+    socket.on('game:category-selecting', ({ gameState, yourPlayerId }) => {
+      setGameState(gameState);
+      setMyPlayerId(yourPlayerId);
+      myPlayerIdRef.current = yourPlayerId;
+      setRematchWaiting(false);
+      setOpponentWantsRematch(false);
+      setSuddenDeathPhase(null);
+      setCoinTossWinnerId(null);
+      setIsSpectator(false);
+      setPhase('category-select');
+    });
+
     socket.on('game:start', ({ gameState, yourPlayerId, imageExtension: ext }) => {
       setGameState(gameState);
       setMyPlayerId(yourPlayerId);
       myPlayerIdRef.current = yourPlayerId;
       setImageExtension(ext);
       setRematchWaiting(false);
+      setOpponentWantsRematch(false);
       setSuddenDeathPhase(null);
       setCoinTossWinnerId(null);
       setIsSpectator(false);
@@ -75,6 +97,10 @@ export function useGame() {
 
     socket.on('game:rematch-waiting', () => {
       setRematchWaiting(true);
+    });
+
+    socket.on('game:rematch-requested', () => {
+      setOpponentWantsRematch(true);
     });
 
     socket.on('game:state-update', ({ gameState }) => {
@@ -165,6 +191,7 @@ export function useGame() {
 
     return () => {
       socket.off('game:waiting');
+      socket.off('game:category-selecting');
       socket.off('game:start');
       socket.off('game:spectate-start');
       socket.off('game:spectate-ended');
@@ -176,6 +203,7 @@ export function useGame() {
       socket.off('game:over');
       socket.off('game:sudden-death');
       socket.off('game:rematch-waiting');
+      socket.off('game:rematch-requested');
       socket.off('game:opponent-disconnected');
       socket.off('game:error');
     };
@@ -225,6 +253,7 @@ export function useGame() {
     setSuddenDeathPhase(null);
     setCoinTossWinnerId(null);
     setRematchWaiting(false);
+    setOpponentWantsRematch(false);
     clearTimeout(sdTransitionRef.current);
     clearTimeout(sdCoinTossRef.current);
     clearTimeout(versusTimerRef.current);
@@ -233,6 +262,13 @@ export function useGame() {
   const requestRematch = useCallback(() => {
     socket.emit('player:rematch');
   }, [socket]);
+
+  const selectCategory = useCallback(
+    (category: CategoryId) => {
+      socket.emit('player:select-category', { category });
+    },
+    [socket]
+  );
 
   const isMyTurn = gameState?.currentTurnPlayerId === myPlayerId;
 
@@ -250,6 +286,7 @@ export function useGame() {
     suddenDeathPhase,
     coinTossWinnerId,
     rematchWaiting,
+    opponentWantsRematch,
     sfxEvent,
     joinGame,
     spectateGame,
@@ -257,5 +294,6 @@ export function useGame() {
     leaveGame,
     playAgain,
     requestRematch,
+    selectCategory,
   };
 }

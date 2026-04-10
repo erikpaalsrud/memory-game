@@ -1,0 +1,74 @@
+[
+  {
+    "imageId": "card-001",
+    "label": "princess"
+  },
+  {
+    "imageId": "card-002",
+    "label": "prince"
+  },
+  {
+    "imageId": "card-003",
+    "label": "fairy godmother"
+  },
+  {
+    "imageId": "card-004",
+    "label": "glass slipper"
+  },
+  {
+    "imageId": "card-005",
+    "label": "magic wand"
+  },
+  {
+    "imageId": "card-006",
+    "label": "talking teapot"
+  },
+  {
+    "imageId": "card-007",
+    "label": "pumpkin carriage"
+  },
+  {
+    "imageId": "card-008",
+    "label": "enchanted rose"
+  },
+  {
+    "imageId": "card-009",
+    "label": "castle"
+  },
+  {
+    "imageId": "card-010",
+    "label": "magic mirror"
+  },
+  {
+    "imageId": "card-011",
+    "label": "spinning wheel"
+  },
+  {
+    "imageId": "card-012",
+    "label": "crown"
+  },
+  {
+    "imageId": "card-013",
+    "label": "paper lantern"
+  },
+  {
+    "imageId": "card-014",
+    "label": "royal horse"
+  },
+  {
+    "imageId": "card-015",
+    "label": "wishing well"
+  },
+  {
+    "imageId": "card-016",
+    "label": "golden harp"
+  },
+  {
+    "imageId": "card-017",
+    "label": "genie lamp"
+  },
+  {
+    "imageId": "card-018",
+    "label": "pixie dust jar"
+  }
+]

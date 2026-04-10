@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { CATEGORIES } from 'memory-game-shared';
 import { MememoryTitle } from './MememoryTitle';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface Props {
   onJoin: (name: string) => void;
@@ -8,19 +10,67 @@ interface Props {
 }
 
 const EMOJIS = ['🃏', '🧠', '⭐', '🎮', '🏆', '✨', '🎯', '🔮', '🌟', '💎', '🎪', '🦄'];
+const RAY_COUNT = 14;
+const SPARKLE_COUNT = 32;
+
+// Stable pseudo-random offsets for sparkles — re-deriving them on every render
+// would jitter them with React StrictMode's double-render. A small precomputed
+// table is plenty for visual variety.
+const SPARKLE_SEEDS = Array.from({ length: SPARKLE_COUNT }, (_, i) => ({
+  x: ((i * 37 + 11) % 95) + 2,
+  y: ((i * 53 + 17) % 92) + 4,
+  d: 1.6 + ((i * 13) % 30) / 10,
+  delay: ((i * 7) % 50) / 10,
+  size: 3 + (i % 3),
+}));
+
+interface Rule {
+  icon: string;
+  textKey: string;
+}
+
+const RULES: Rule[] = [
+  { icon: '🃏', textKey: 'lobby.info.flip' },
+  { icon: '🧠', textKey: 'lobby.info.match' },
+  { icon: '🏆', textKey: 'lobby.info.win' },
+];
 
 export function Lobby({ onJoin, onSpectate, isConnected }: Props) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [spectateCode, setSpectateCode] = useState('');
   const [showSpectate, setShowSpectate] = useState(false);
+  const [flippedRules, setFlippedRules] = useState<boolean[]>([false, false, false]);
 
   const handleSubmit = () => {
     const trimmed = name.trim();
     if (trimmed) onJoin(trimmed);
   };
 
+  const toggleRule = (i: number) => {
+    setFlippedRules((prev) => {
+      const next = [...prev];
+      next[i] = !next[i];
+      return next;
+    });
+  };
+
   return (
     <div className="lobby">
+      {/* Slow color-shifting magical aura behind everything */}
+      <div className="lobby-aura" aria-hidden />
+
+      {/* Radial light rays from center */}
+      <div className="lobby-rays" aria-hidden>
+        {Array.from({ length: RAY_COUNT }, (_, i) => (
+          <div
+            key={i}
+            className="lobby-ray"
+            style={{ '--ray-angle': `${(360 / RAY_COUNT) * i}deg` } as React.CSSProperties}
+          />
+        ))}
+      </div>
+
       {/* Floating emoji particles */}
       <div className="lobby-particles" aria-hidden>
         {EMOJIS.map((emoji, i) => (
@@ -39,25 +89,26 @@ export function Lobby({ onJoin, onSpectate, isConnected }: Props) {
         ))}
       </div>
 
-      {/* Floating card backs */}
+      {/* Floating card backs (now using the generated PNG) */}
       <div className="lobby-cards-bg" aria-hidden>
-        <div className="floating-card fc-1"><img src="/cards/card-back.svg" alt="" /></div>
-        <div className="floating-card fc-2"><img src="/cards/card-back.svg" alt="" /></div>
-        <div className="floating-card fc-3"><img src="/cards/card-back.svg" alt="" /></div>
-        <div className="floating-card fc-4"><img src="/cards/card-back.svg" alt="" /></div>
+        <div className="floating-card fc-1"><img src="/cards/card-back.png" alt="" /></div>
+        <div className="floating-card fc-2"><img src="/cards/card-back.png" alt="" /></div>
+        <div className="floating-card fc-3"><img src="/cards/card-back.png" alt="" /></div>
+        <div className="floating-card fc-4"><img src="/cards/card-back.png" alt="" /></div>
       </div>
 
       {/* Sparkle dots */}
       <div className="lobby-sparkles" aria-hidden>
-        {Array.from({ length: 20 }, (_, i) => (
+        {SPARKLE_SEEDS.map((s, i) => (
           <span
             key={i}
             className="sparkle"
             style={{
-              '--sx': `${5 + Math.random() * 90}%`,
-              '--sy': `${5 + Math.random() * 90}%`,
-              '--sd': `${2 + Math.random() * 4}s`,
-              '--sdelay': `${Math.random() * 5}s`,
+              '--sx': `${s.x}%`,
+              '--sy': `${s.y}%`,
+              '--sd': `${s.d}s`,
+              '--sdelay': `${s.delay}s`,
+              '--ssize': `${s.size}px`,
             } as React.CSSProperties}
           />
         ))}
@@ -65,49 +116,88 @@ export function Lobby({ onJoin, onSpectate, isConnected }: Props) {
 
       <div className="lobby-hero">
         <div className="lobby-topsi-wrapper">
-          <div className="topsi-speech-bubble">Hi!</div>
+          <div className="topsi-speech-bubble">{t('lobby.topsi.greeting')}</div>
           <img src="/mascot/topsi_happy.png" className="lobby-topsi" alt="Topsi" draggable={false} />
         </div>
         <MememoryTitle size="large" animate />
-        <p className="lobby-tagline">The classic card game — now multiplayer</p>
+        <p className="lobby-tagline">{t('lobby.tagline')}</p>
       </div>
 
       <div className="lobby-card">
-        <h2>Join a Game</h2>
-        <p>Enter your name to challenge an opponent</p>
+        <h2>{t('lobby.join.heading')}</h2>
+        <p>{t('lobby.join.subheading')}</p>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="What's your name?"
+          placeholder={t('lobby.join.namePlaceholder')}
           maxLength={20}
           autoFocus
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
         />
         <button className="lobby-play-btn" onClick={handleSubmit} disabled={!name.trim() || !isConnected}>
-          {isConnected ? '🎮 Find Game' : 'Connecting...'}
+          {isConnected ? t('lobby.join.button') : t('lobby.join.connecting')}
         </button>
       </div>
 
-      <div className="lobby-info">
-        <div className="info-step">
-          <span className="info-icon bounce-1">🃏</span>
-          <span>Flip cards to reveal images</span>
+      {/* Magical themes preview — five worlds floating below the join card */}
+      <div className="lobby-themes" aria-hidden>
+        <div className="lobby-themes-label">
+          <span className="themes-star">🌟</span>
+          {t('lobby.themes.label')}
+          <span className="themes-star">🌟</span>
         </div>
-        <div className="info-step">
-          <span className="info-icon bounce-2">🧠</span>
-          <span>Remember & find matching pairs</span>
+        <div className="lobby-themes-row">
+          {CATEGORIES.map((cat, i) => (
+            <div
+              key={cat.id}
+              className="theme-chip"
+              style={{ '--i': i, '--n': CATEGORIES.length } as React.CSSProperties}
+            >
+              <div className="theme-chip-art">
+                <img src={`/cards/${cat.id}/_cover.png`} alt="" draggable={false} />
+                <div className="theme-chip-glow" />
+              </div>
+              <span className="theme-chip-name">{t(`category.${cat.id}.label`)}</span>
+            </div>
+          ))}
         </div>
-        <div className="info-step">
-          <span className="info-icon bounce-3">🏆</span>
-          <span>Outscore your opponent to win!</span>
+      </div>
+
+      <div className="lobby-rules">
+        <p className="lobby-rules-heading">{t('lobby.rules.heading')}</p>
+        <div className="lobby-rules-row">
+          {RULES.map((rule, i) => {
+            const isFlipped = flippedRules[i];
+            return (
+              <button
+                key={i}
+                type="button"
+                className={`rule-card ${isFlipped ? 'is-flipped' : ''}`}
+                onClick={() => toggleRule(i)}
+                aria-pressed={isFlipped}
+                aria-label={t(rule.textKey)}
+                style={{ '--i': i } as React.CSSProperties}
+              >
+                <div className="rule-card-inner">
+                  <div className="rule-card-front">
+                    <img src="/cards/card-back.png" alt="" draggable={false} />
+                  </div>
+                  <div className="rule-card-back">
+                    <span className="rule-card-icon">{rule.icon}</span>
+                    <span className="rule-card-text">{t(rule.textKey)}</span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <div className="lobby-spectate">
         {!showSpectate ? (
           <button className="btn-spectate-toggle" onClick={() => setShowSpectate(true)}>
-            👀 Watch a game
+            {t('lobby.spectate.toggle')}
           </button>
         ) : (
           <div className="spectate-form">
@@ -115,7 +205,7 @@ export function Lobby({ onJoin, onSpectate, isConnected }: Props) {
               type="text"
               value={spectateCode}
               onChange={(e) => setSpectateCode(e.target.value.toUpperCase())}
-              placeholder="Enter watch code"
+              placeholder={t('lobby.spectate.placeholder')}
               maxLength={5}
               onKeyDown={(e) => e.key === 'Enter' && spectateCode.trim() && onSpectate(spectateCode.trim())}
             />
@@ -123,7 +213,7 @@ export function Lobby({ onJoin, onSpectate, isConnected }: Props) {
               onClick={() => spectateCode.trim() && onSpectate(spectateCode.trim())}
               disabled={!spectateCode.trim() || !isConnected}
             >
-              Watch
+              {t('lobby.spectate.button')}
             </button>
           </div>
         )}

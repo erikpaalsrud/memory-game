@@ -1,0 +1,74 @@
+[
+  {
+    "imageId": "card-001",
+    "label": "jellyfish"
+  },
+  {
+    "imageId": "card-002",
+    "label": "anglerfish"
+  },
+  {
+    "imageId": "card-003",
+    "label": "giant squid"
+  },
+  {
+    "imageId": "card-004",
+    "label": "orca"
+  },
+  {
+    "imageId": "card-005",
+    "label": "blue ringed octopus"
+  },
+  {
+    "imageId": "card-006",
+    "label": "great white"
+  },
+  {
+    "imageId": "card-007",
+    "label": "seahorse"
+  },
+  {
+    "imageId": "card-008",
+    "label": "manta ray"
+  },
+  {
+    "imageId": "card-009",
+    "label": "lantern fish"
+  },
+  {
+    "imageId": "card-010",
+    "label": "hermit crab"
+  },
+  {
+    "imageId": "card-011",
+    "label": "coral branch"
+  },
+  {
+    "imageId": "card-012",
+    "label": "nautilus"
+  },
+  {
+    "imageId": "card-013",
+    "label": "swordfish"
+  },
+  {
+    "imageId": "card-014",
+    "label": "sardine school"
+  },
+  {
+    "imageId": "card-015",
+    "label": "ghost shrimp"
+  },
+  {
+    "imageId": "card-016",
+    "label": "sea urchin"
+  },
+  {
+    "imageId": "card-017",
+    "label": "dumbo octopus"
+  },
+  {
+    "imageId": "card-018",
+    "label": "mermaid"
+  }
+]

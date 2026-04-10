@@ -4,6 +4,7 @@ import { Topsi } from './Topsi';
 import { GRID_COLS, GRID_CELLS, CENTER_CELL } from 'memory-game-shared';
 import type { ClientGameState } from 'memory-game-shared';
 import type { SuddenDeathPhase } from '../hooks/useGame';
+import { useTranslation } from '../i18n/LanguageContext';
 
 interface Props {
   gameState: ClientGameState;
@@ -32,6 +33,7 @@ export function GameBoard({
   suddenDeathPhase,
   coinTossWinnerId,
 }: Props) {
+  const { t } = useTranslation();
   const canInteract = isMyTurn && !isSpectator;
   const remainingCards = gameState.cards.filter((c) => c.state !== 'matched');
   const coinTossWinner = gameState.players.find((p) => p.id === coinTossWinnerId);
@@ -46,8 +48,8 @@ export function GameBoard({
           myPlayerId={myPlayerId}
         />
         <div className="sd-overlay">
-          <h2 className="sd-title">SUDDEN DEATH</h2>
-          <p className="sd-subtitle">Shuffling remaining cards...</p>
+          <h2 className="sd-title">{t('sd.title')}</h2>
+          <p className="sd-subtitle">{t('sd.shuffling')}</p>
           <div className="sd-shuffle-hand">
             {remainingCards.map((card, i) => (
               <div
@@ -86,7 +88,7 @@ export function GameBoard({
           </div>
           <div className="coin-result">
             <span className="coin-winner-name">{coinTossWinner?.name}</span>
-            <span className="coin-goes-first">goes first!</span>
+            <span className="coin-goes-first">{t('sd.goesFirst')}</span>
           </div>
         </div>
       </div>
@@ -99,10 +101,10 @@ export function GameBoard({
     let turnClass = 'sd-turn';
 
     if (isMyTurn) {
-      turnText = 'Your turn — find a match to win!';
+      turnText = t('sd.turnYours');
       turnClass = 'sd-turn your-turn';
     } else {
-      turnText = "Opponent's turn...";
+      turnText = t('game.turn.opponent');
       turnClass = 'sd-turn';
     }
 
@@ -118,13 +120,14 @@ export function GameBoard({
 
         {error && <div className="error-message">{error}</div>}
 
-        <div className="sd-banner">SUDDEN DEATH — Next match wins!</div>
+        <div className="sd-banner">{t('sd.banner')}</div>
 
         <div className="sd-hand">
           {remainingCards.map((card) => (
             <div key={card.id} className="sd-hand-slot">
               <Card
                 card={card}
+                category={gameState.category}
                 onClick={() => onFlipCard(card.id)}
                 disabled={!canInteract || card.state !== 'face-down'}
                 imageExtension={imageExtension}
@@ -134,7 +137,7 @@ export function GameBoard({
           ))}
         </div>
 
-        <div className="pairs-remaining">{gameState.pairsRemaining} pairs remaining</div>
+        <div className="pairs-remaining">{t('game.pairsRemaining', { n: gameState.pairsRemaining })}</div>
       </div>
     );
   }
@@ -145,16 +148,16 @@ export function GameBoard({
   let turnClass = '';
 
   if (isSpectator) {
-    turnText = `${currentPlayer?.name ?? 'Player'}'s turn`;
+    turnText = t('game.turn.spectator', { name: currentPlayer?.name ?? '' });
     turnClass = '';
   } else if (stillYourTurn && isMyTurn) {
-    turnText = 'Match! Still your turn — go again!';
+    turnText = t('game.turn.yoursAgain');
     turnClass = 'your-turn still-turn';
   } else if (isMyTurn) {
-    turnText = 'Your turn — pick a card!';
+    turnText = t('game.turn.yours');
     turnClass = 'your-turn';
   } else {
-    turnText = "Opponent's turn...";
+    turnText = t('game.turn.opponent');
   }
 
   // Build 5x5 grid cells with center empty
@@ -180,6 +183,7 @@ export function GameBoard({
         <Card
           key={card.id}
           card={card}
+          category={gameState.category}
           onClick={() => onFlipCard(card.id)}
           disabled={!canInteract || card.state !== 'face-down'}
           imageExtension={imageExtension}
@@ -211,13 +215,13 @@ export function GameBoard({
         </div>
       </div>
 
-      <div className="pairs-remaining">{gameState.pairsRemaining} pairs remaining</div>
+      <div className="pairs-remaining">{t('game.pairsRemaining', { n: gameState.pairsRemaining })}</div>
 
-      {isSpectator && <div className="spectator-badge">Spectating</div>}
+      {isSpectator && <div className="spectator-badge">{t('game.spectatorBadge')}</div>}
 
       {!isSpectator && gameState.spectateCode && (
         <div className="spectate-code">
-          <span>Watch code: <strong>{gameState.spectateCode}</strong></span>
+          <span>{t('game.spectateCode')} <strong>{gameState.spectateCode}</strong></span>
           <button
             className="btn-copy"
             onClick={() => {
@@ -225,7 +229,7 @@ export function GameBoard({
               navigator.clipboard.writeText(url).catch(() => {});
             }}
           >
-            Copy link
+            {t('game.copyLink')}
           </button>
         </div>
       )}
