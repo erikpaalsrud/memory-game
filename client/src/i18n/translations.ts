@@ -61,6 +61,8 @@ const en: Dict = {
   'category.jungle.blurb': 'Wild animals deep in the canopy',
   'category.deep-sea.label': 'Deep Sea',
   'category.deep-sea.blurb': 'Glowing creatures from the abyss',
+  'category.universe.label': 'The Universe',
+  'category.universe.blurb': 'Planets, moons, rockets, and stars',
 
   // Versus screen
   'versus.you': 'you',
@@ -139,6 +141,8 @@ const no: Dict = {
   'category.jungle.blurb': 'Ville dyr dypt inne i jungelen',
   'category.deep-sea.label': 'Havdypet',
   'category.deep-sea.blurb': 'Lysende skapninger fra dypet',
+  'category.universe.label': 'Universet',
+  'category.universe.blurb': 'Planeter, måner, raketter og stjerner',
 
   'versus.you': 'deg',
   'versus.startsFirst': 'starter',

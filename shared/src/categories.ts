@@ -7,7 +7,8 @@ export type CategoryId =
   | 'mystical'
   | 'tropical'
   | 'jungle'
-  | 'deep-sea';
+  | 'deep-sea'
+  | 'universe';
 
 export interface CategoryMeta {
   id: CategoryId;
@@ -40,6 +41,11 @@ export const CATEGORIES: readonly CategoryMeta[] = [
     id: 'deep-sea',
     label: 'Deep Sea',
     blurb: 'Glowing creatures from the abyss',
+  },
+  {
+    id: 'universe',
+    label: 'The Universe',
+    blurb: 'Planets, moons, rockets, and stars',
   },
 ] as const;
 

@@ -208,6 +208,43 @@ export const CATEGORIES_DATA: CategoryDef[] = [
       { imageId: 'card-018', label: 'mermaid', subject: 'a mermaid with long flowing hair and a turquoise tail' },
     ],
   },
+
+  // ─── UNIVERSE ──────────────────────────────────────────────────────────
+  {
+    id: 'universe',
+    stylePrompt:
+      `${STYLE_BASE} CRITICAL: Background must fill the ENTIRE square edge to edge — ` +
+      `no white margins, no padding, no border. Background: deep cosmic space — dark navy ` +
+      `and black with swirling purple, pink, and blue nebula clouds, scattered tiny stars, ` +
+      `a faint distant spiral galaxy, soft volumetric light rays. Cool ethereal cosmic glow. ` +
+      `Subject for this reference: planet Earth as a glowing blue marble with white swirling clouds.`,
+    coverPrompt:
+      `${STYLE_BASE} CRITICAL: Background must fill the ENTIRE square edge to edge — ` +
+      `no white margins, no padding, no border. Background: deep cosmic space — dark navy ` +
+      `and black with swirling purple, pink, and blue nebula clouds, scattered tiny stars. ` +
+      `Subject: a brilliant spiral galaxy with a bright golden center and sweeping arms.`,
+    coverLabel: 'spiral galaxy',
+    subjects: [
+      { imageId: 'card-001', label: 'earth', subject: 'planet Earth as a glowing blue marble with white swirling clouds' },
+      { imageId: 'card-002', label: 'saturn', subject: 'planet Saturn with bright golden rings tilted on its axis' },
+      { imageId: 'card-003', label: 'mars', subject: 'planet Mars as a rusty red sphere with subtle craters' },
+      { imageId: 'card-004', label: 'jupiter', subject: 'planet Jupiter as a banded gas giant with the great red spot' },
+      { imageId: 'card-005', label: 'full moon', subject: 'a glowing full moon with detailed grey craters' },
+      { imageId: 'card-006', label: 'sun', subject: 'a brilliant yellow sun with a fiery corona and solar flares' },
+      { imageId: 'card-007', label: 'ufo', subject: 'a metallic flying saucer UFO with glowing green windows' },
+      { imageId: 'card-008', label: 'alien', subject: 'a friendly little green alien with big black eyes and antennae' },
+      { imageId: 'card-009', label: 'astronaut', subject: 'a cute astronaut floating in a white spacesuit with a glowing visor' },
+      { imageId: 'card-010', label: 'rocket', subject: 'a red and white rocket ship blasting off with orange flames' },
+      { imageId: 'card-011', label: 'galaxy', subject: 'a large spiral galaxy with a bright golden center' },
+      { imageId: 'card-012', label: 'comet', subject: 'a bright blue comet with a long sweeping tail of dust and ice' },
+      { imageId: 'card-013', label: 'shooting star', subject: 'a single glowing shooting star streaking diagonally with sparkles' },
+      { imageId: 'card-014', label: 'constellation', subject: 'a glowing star constellation pattern with thin connecting lines forming a bear shape' },
+      { imageId: 'card-015', label: 'aurora', subject: 'a curtain of green and pink aurora borealis northern lights' },
+      { imageId: 'card-016', label: 'nebula', subject: 'a colorful pink and blue nebula gas cloud with bright stars inside' },
+      { imageId: 'card-017', label: 'crescent moon', subject: 'a smiling cartoon crescent moon with a sleepy face and a nightcap' },
+      { imageId: 'card-018', label: 'telescope', subject: 'a brass telescope on a wooden tripod pointed up at the stars' },
+    ],
+  },
 ];
 
 export function getCategory(id: CategoryId): CategoryDef {

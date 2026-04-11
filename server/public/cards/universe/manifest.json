@@ -1,0 +1,74 @@
+[
+  {
+    "imageId": "card-001",
+    "label": "earth"
+  },
+  {
+    "imageId": "card-002",
+    "label": "saturn"
+  },
+  {
+    "imageId": "card-003",
+    "label": "mars"
+  },
+  {
+    "imageId": "card-004",
+    "label": "jupiter"
+  },
+  {
+    "imageId": "card-005",
+    "label": "full moon"
+  },
+  {
+    "imageId": "card-006",
+    "label": "sun"
+  },
+  {
+    "imageId": "card-007",
+    "label": "ufo"
+  },
+  {
+    "imageId": "card-008",
+    "label": "alien"
+  },
+  {
+    "imageId": "card-009",
+    "label": "astronaut"
+  },
+  {
+    "imageId": "card-010",
+    "label": "rocket"
+  },
+  {
+    "imageId": "card-011",
+    "label": "galaxy"
+  },
+  {
+    "imageId": "card-012",
+    "label": "comet"
+  },
+  {
+    "imageId": "card-013",
+    "label": "shooting star"
+  },
+  {
+    "imageId": "card-014",
+    "label": "constellation"
+  },
+  {
+    "imageId": "card-015",
+    "label": "aurora"
+  },
+  {
+    "imageId": "card-016",
+    "label": "nebula"
+  },
+  {
+    "imageId": "card-017",
+    "label": "crescent moon"
+  },
+  {
+    "imageId": "card-018",
+    "label": "telescope"
+  }
+]
