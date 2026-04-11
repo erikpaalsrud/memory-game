@@ -36,7 +36,7 @@ const en: Dict = {
   'lobby.spectate.toggle': '👀 Watch a game',
   'lobby.spectate.placeholder': 'Enter watch code',
   'lobby.spectate.button': 'Watch',
-  'lobby.themes.label': 'Five magical worlds await',
+  'lobby.themes.label': 'Six magical worlds await',
   'lobby.rules.heading': '👇 Tap the cards to learn the rules',
 
   // Waiting room
@@ -119,7 +119,7 @@ const no: Dict = {
   'lobby.spectate.toggle': '👀 Se på et spill',
   'lobby.spectate.placeholder': 'Skriv inn tilskuerkode',
   'lobby.spectate.button': 'Se',
-  'lobby.themes.label': 'Fem magiske verdener venter',
+  'lobby.themes.label': 'Seks magiske verdener venter',
   'lobby.rules.heading': '👇 Vend kortene for å lære reglene',
 
   'waiting.title': 'Leter etter en motstander...',

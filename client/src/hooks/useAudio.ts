@@ -1,7 +1,7 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 
 const BATTLE_TRACKS = Array.from({ length: 15 }, (_, i) => `/music/battle_${i + 1}.mp3`);
-const TITLE_TRACK = '/music/title_menu.mp3';
+const TITLE_TRACK = '/music/theme_song.mp3';
 const FADE_MS = 800;
 
 // SFX paths
