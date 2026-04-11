@@ -10,8 +10,7 @@ interface Props {
 }
 
 const EMOJIS = ['🃏', '🧠', '⭐', '🎮', '🏆', '✨', '🎯', '🔮', '🌟', '💎', '🎪', '🦄'];
-const RAY_COUNT = 14;
-const SPARKLE_COUNT = 32;
+const SPARKLE_COUNT = 16;
 
 // Stable pseudo-random offsets for sparkles — re-deriving them on every render
 // would jitter them with React StrictMode's double-render. A small precomputed
@@ -60,16 +59,9 @@ export function Lobby({ onJoin, onSpectate, isConnected }: Props) {
       {/* Slow color-shifting magical aura behind everything */}
       <div className="lobby-aura" aria-hidden />
 
-      {/* Radial light rays from center */}
-      <div className="lobby-rays" aria-hidden>
-        {Array.from({ length: RAY_COUNT }, (_, i) => (
-          <div
-            key={i}
-            className="lobby-ray"
-            style={{ '--ray-angle': `${(360 / RAY_COUNT) * i}deg` } as React.CSSProperties}
-          />
-        ))}
-      </div>
+      {/* Radial light rays from center — single repeating-conic-gradient
+          element so the browser composites it once */}
+      <div className="lobby-rays" aria-hidden />
 
       {/* Floating emoji particles */}
       <div className="lobby-particles" aria-hidden>
