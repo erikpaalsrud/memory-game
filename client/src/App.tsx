@@ -9,6 +9,7 @@ import { VersusScreen } from './components/VersusScreen';
 import { GameBoard } from './components/GameBoard';
 import { GameOver } from './components/GameOver';
 import { LanguageToggle } from './components/LanguageToggle';
+import { MegaCinematic } from './components/MegaCinematic';
 import { useTranslation } from './i18n/LanguageContext';
 import './styles/card.css';
 
@@ -65,6 +66,9 @@ function App() {
       case 'match': audio.playSfx('matchChime', 0.6); break;
       case 'mismatch': audio.playSfx('mismatch', 0.4); break;
       case 'suddenDeath': audio.playSfx('suddenDeath', 0.7); break;
+      case 'mega1': audio.playSfx('megaWave1', 0.85); break;
+      case 'mega2': audio.playSfx('megaWave2', 0.9); break;
+      case 'mega3': audio.playSfx('megaWave3', 0.95); break;
     }
   }, [game.sfxEvent]);
 
@@ -147,6 +151,11 @@ function App() {
           onPlayAgain={game.playAgain}
           onLeave={game.leaveGame}
         />
+      )}
+
+      {/* Mega Mode cinematic — full-screen overlay shown briefly when a wave triggers */}
+      {game.gameState && (
+        <MegaCinematic trigger={game.megaTrigger} gameState={game.gameState} />
       )}
     </div>
   );

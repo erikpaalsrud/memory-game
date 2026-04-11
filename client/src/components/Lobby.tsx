@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { CATEGORIES } from 'memory-game-shared';
+import { CATEGORIES, type GameMode } from 'memory-game-shared';
 import { MememoryTitle } from './MememoryTitle';
 import { useTranslation } from '../i18n/LanguageContext';
 
 interface Props {
-  onJoin: (name: string) => void;
+  onJoin: (name: string, mode: GameMode) => void;
   onSpectate: (code: string) => void;
   isConnected: boolean;
 }
+
+const MODE_STORAGE_KEY = 'mememory.gameMode';
 
 const EMOJIS = ['🃏', '🧠', '⭐', '🎮', '🏆', '✨', '🎯', '🔮', '🌟', '💎', '🎪', '🦄'];
 const SPARKLE_COUNT = 16;
@@ -40,10 +42,22 @@ export function Lobby({ onJoin, onSpectate, isConnected }: Props) {
   const [spectateCode, setSpectateCode] = useState('');
   const [showSpectate, setShowSpectate] = useState(false);
   const [flippedRules, setFlippedRules] = useState<boolean[]>([false, false, false]);
+  const [mode, setMode] = useState<GameMode>(() => {
+    try {
+      const saved = localStorage.getItem(MODE_STORAGE_KEY);
+      if (saved === 'classic' || saved === 'mega') return saved;
+    } catch { /* ignore */ }
+    return 'classic';
+  });
+
+  const pickMode = (next: GameMode) => {
+    setMode(next);
+    try { localStorage.setItem(MODE_STORAGE_KEY, next); } catch { /* ignore */ }
+  };
 
   const handleSubmit = () => {
     const trimmed = name.trim();
-    if (trimmed) onJoin(trimmed);
+    if (trimmed) onJoin(trimmed, mode);
   };
 
   const toggleRule = (i: number) => {
@@ -127,6 +141,28 @@ export function Lobby({ onJoin, onSpectate, isConnected }: Props) {
           autoFocus
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
         />
+
+        <div className="lobby-mode-picker" role="radiogroup" aria-label={t('lobby.mode.heading')}>
+          <button
+            type="button"
+            className={`lobby-mode-btn ${mode === 'classic' ? 'is-active' : ''}`}
+            onClick={() => pickMode('classic')}
+            aria-pressed={mode === 'classic'}
+          >
+            <span className="lobby-mode-name">{t('lobby.mode.classic')}</span>
+            <span className="lobby-mode-desc">{t('lobby.mode.classic.desc')}</span>
+          </button>
+          <button
+            type="button"
+            className={`lobby-mode-btn lobby-mode-mega ${mode === 'mega' ? 'is-active' : ''}`}
+            onClick={() => pickMode('mega')}
+            aria-pressed={mode === 'mega'}
+          >
+            <span className="lobby-mode-name">{t('lobby.mode.mega')}</span>
+            <span className="lobby-mode-desc">{t('lobby.mode.mega.desc')}</span>
+          </button>
+        </div>
+
         <button className="lobby-play-btn" onClick={handleSubmit} disabled={!name.trim() || !isConnected}>
           {isConnected ? t('lobby.join.button') : t('lobby.join.connecting')}
         </button>

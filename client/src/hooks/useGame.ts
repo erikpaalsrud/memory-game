@@ -1,6 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { CategoryId, ClientGameState } from 'memory-game-shared';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import type { CategoryId, ClientGameState, GameMode } from 'memory-game-shared';
 import { useSocket } from './useSocket';
+
+interface TopsiPeek {
+  cardId: number;
+  imageId: string;
+  label: string;
+  startedAt: number;
+}
+
+const TOPSI_PEEK_DURATION_MS = 1400;
 
 export type AppPhase =
   | 'lobby'
@@ -12,6 +21,13 @@ export type AppPhase =
   | 'opponent-left'
   | 'spectating';
 export type SuddenDeathPhase = null | 'transition' | 'coin-toss' | 'playing';
+
+export interface MegaTriggerEvent {
+  level: number;            // 1, 2, or 3
+  triggererId: string;
+  addedCardIds: number[];
+  seq: number;              // re-renders even if level repeats
+}
 
 export function useGame() {
   const { socket, isConnected } = useSocket();
@@ -26,6 +42,9 @@ export function useGame() {
   const [coinTossWinnerId, setCoinTossWinnerId] = useState<string | null>(null);
   const [rematchWaiting, setRematchWaiting] = useState(false);
   const [opponentWantsRematch, setOpponentWantsRematch] = useState(false);
+  const [megaTrigger, setMegaTrigger] = useState<MegaTriggerEvent | null>(null);
+  const [topsiPeek, setTopsiPeek] = useState<TopsiPeek | null>(null);
+  const peekTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [isSpectator, setIsSpectator] = useState(false);
   const [sfxEvent, setSfxEvent] = useState<{ type: string; seq: number }>({ type: '', seq: 0 });
   const stillTurnTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -96,11 +115,31 @@ export function useGame() {
     });
 
     socket.on('game:rematch-waiting', () => {
+      console.log('[rematch] received game:rematch-waiting');
       setRematchWaiting(true);
     });
 
     socket.on('game:rematch-requested', () => {
+      console.log('[rematch] received game:rematch-requested');
       setOpponentWantsRematch(true);
+    });
+
+    socket.on('game:mega-triggered', ({ gameState: newState, triggeringPlayerId, megaLevel, addedCardIds }) => {
+      console.log(`[mega] wave ${megaLevel} triggered by ${triggeringPlayerId}`);
+      setGameState(newState);
+      setSfxEvent((e) => ({ type: `mega${megaLevel}`, seq: e.seq + 1 }));
+      setMegaTrigger((prev) => ({
+        level: megaLevel,
+        triggererId: triggeringPlayerId,
+        addedCardIds,
+        seq: (prev?.seq ?? 0) + 1,
+      }));
+    });
+
+    socket.on('game:topsi-peek', ({ cardId, imageId, label }) => {
+      setTopsiPeek({ cardId, imageId, label, startedAt: Date.now() });
+      clearTimeout(peekTimerRef.current);
+      peekTimerRef.current = setTimeout(() => setTopsiPeek(null), TOPSI_PEEK_DURATION_MS);
     });
 
     socket.on('game:state-update', ({ gameState }) => {
@@ -120,7 +159,7 @@ export function useGame() {
       });
     });
 
-    socket.on('game:pair-matched', ({ cardIds, playerId }) => {
+    socket.on('game:pair-matched', ({ cardIds, playerId, pointsAwarded }) => {
       setSfxEvent(e => ({ type: 'match', seq: e.seq + 1 }));
       setMatchedCardIds(cardIds);
       clearTimeout(matchGlowTimerRef.current);
@@ -141,7 +180,7 @@ export function useGame() {
             cardIds.includes(c.id) ? { ...c, state: 'matched' as const } : c
           ),
           players: prev.players.map((p) =>
-            p.id === playerId ? { ...p, score: p.score + 1 } : p
+            p.id === playerId ? { ...p, score: p.score + pointsAwarded } : p
           ) as [typeof prev.players[0], typeof prev.players[1]],
         };
       });
@@ -204,14 +243,16 @@ export function useGame() {
       socket.off('game:sudden-death');
       socket.off('game:rematch-waiting');
       socket.off('game:rematch-requested');
+      socket.off('game:mega-triggered');
+      socket.off('game:topsi-peek');
       socket.off('game:opponent-disconnected');
       socket.off('game:error');
     };
   }, [socket]);
 
   const joinGame = useCallback(
-    (playerName: string) => {
-      socket.emit('player:join', { playerName });
+    (playerName: string, mode: GameMode = 'classic') => {
+      socket.emit('player:join', { playerName, mode });
     },
     [socket]
   );
@@ -226,6 +267,10 @@ export function useGame() {
   const flipCard = useCallback(
     (cardId: number) => {
       if (isSpectator) return;
+      // The moment the player engages, clear any active peek so it doesn't
+      // interfere with their real flips.
+      setTopsiPeek(null);
+      clearTimeout(peekTimerRef.current);
       socket.emit('player:flip-card', { cardId });
     },
     [socket, isSpectator]
@@ -260,6 +305,7 @@ export function useGame() {
   }, [socket]);
 
   const requestRematch = useCallback(() => {
+    console.log('[rematch] requestRematch called — emitting player:rematch');
     socket.emit('player:rematch');
   }, [socket]);
 
@@ -272,9 +318,25 @@ export function useGame() {
 
   const isMyTurn = gameState?.currentTurnPlayerId === myPlayerId;
 
+  // Effective game state with the Topsi Peek card temporarily showing as
+  // face-up. This way components don't need to know about peek state — they
+  // just render whatever card.state says.
+  const effectiveGameState = useMemo<ClientGameState | null>(() => {
+    if (!gameState) return gameState;
+    if (!topsiPeek) return gameState;
+    return {
+      ...gameState,
+      cards: gameState.cards.map((c) =>
+        c.id === topsiPeek.cardId
+          ? { ...c, imageId: topsiPeek.imageId, label: topsiPeek.label, state: 'face-up' as const }
+          : c,
+      ),
+    };
+  }, [gameState, topsiPeek]);
+
   return {
     phase,
-    gameState,
+    gameState: effectiveGameState,
     myPlayerId,
     error,
     isConnected,
@@ -287,6 +349,7 @@ export function useGame() {
     coinTossWinnerId,
     rematchWaiting,
     opponentWantsRematch,
+    megaTrigger,
     sfxEvent,
     joinGame,
     spectateGame,

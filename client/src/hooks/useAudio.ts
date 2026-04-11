@@ -12,6 +12,10 @@ const SFX = {
   vsClash: '/sfx/vs_clash.ogg',
   coinToss: '/sfx/coin_toss.ogg',
   suddenDeath: '/sfx/sudden_death.ogg',
+  // Mega Mode wave stingers (escalating intensity)
+  megaWave1: '/sfx/mega_wave_1.mp3',
+  megaWave2: '/sfx/mega_wave_2.mp3',
+  megaWave3: '/sfx/mega_wave_3.mp3',
 } as const;
 
 type SfxName = keyof typeof SFX;

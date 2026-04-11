@@ -26,6 +26,70 @@
     0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* === Scoreboard ×N multiplier badge (Mega Wave + Topsi's Favor) === */
+
+.score-multiplier-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(120deg, #ffd86b, #ff9bd2 50%, #6c63ff);
+  background-size: 200% 200%;
+  box-shadow: 0 2px 8px rgba(255, 216, 107, 0.5);
+  animation: scoreMultShimmer 2s linear infinite, scoreMultPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes scoreMultShimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes scoreMultPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+
+/* === MEGA PAIR — the special golden hunt-target shown in Final Duel === */
+.card-container.is-mega-pair .card-back-face {
+  box-shadow:
+    0 0 0 3px #ffd86b,
+    0 0 24px rgba(255, 216, 107, 0.7),
+    0 0 48px rgba(255, 155, 210, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  animation: megaPairPulse 1.6s ease-in-out infinite;
+}
+
+.card-container.is-mega-pair.matched .card-back-face {
+  /* Once matched, lock the gold ring (no more pulse) */
+  box-shadow:
+    0 0 0 4px #ffd86b,
+    0 0 32px rgba(255, 216, 107, 0.85),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  animation: none;
+}
+
+@keyframes megaPairPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px #ffd86b,
+      0 0 24px rgba(255, 216, 107, 0.7),
+      0 0 48px rgba(255, 155, 210, 0.4),
+      0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px #ffd86b,
+      0 0 36px rgba(255, 216, 107, 1),
+      0 0 72px rgba(255, 155, 210, 0.6),
+      0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
 /* Brief celebration: scale-pulse in place + intensified glow.
    Settles back into the permanent matched state above. No swoosh, no fade. */
 .card-container.just-matched {
@@ -129,12 +193,55 @@
 
 .game-board {
   display: grid;
-  gap: 8px;
-  max-width: 600px;
+  /* Tighter gap as the grid grows so cells stay larger */
+  gap: clamp(4px, calc(12px - var(--grid-size, 5) * 0.8px), 8px);
+  /* Board grows as the grid grows but never overflows the viewport.
+     Cells end up roughly:
+       5×5  → 110px each (board ~ 550px)
+       7×7  → 105px each (board ~ 735px)
+       9×9  → 100px each (board ~ 900px)
+       11×11 → 95px each  (board ~ 1045px capped at 1100px)
+     Mobile shrinks proportionally via the second clamp argument. */
+  width: 100%;
+  max-width: min(
+    1100px,
+    calc(100vw - 32px),
+    calc(var(--grid-size, 5) * clamp(70px, 14vw, 110px))
+  );
   margin: 0 auto;
   padding: 16px;
   transform-style: preserve-3d;
-  transition: transform 0.5s;
+  /* Smooth animation when the grid expands during a Mega Wave */
+  transition: transform 0.5s, max-width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* In Mega Mode, hovering a card pops it bigger so kids can inspect images
+   even when the grid is dense. Touch users can long-press for the same effect.
+   Only applies to non-disabled, non-matched cards. */
+.game-board.is-mega .card-container:not(.disabled):not(.matched):hover .card-inner,
+.game-board.is-mega .card-container:not(.disabled):not(.matched):focus-visible .card-inner {
+  transform: scale(1.18);
+  z-index: 15;
+}
+
+.game-board.is-mega .card-slot {
+  /* New cells slide in from a small scale on first render */
+  animation: cardSlotEnter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.game-board.is-final-duel {
+  filter: drop-shadow(0 0 24px rgba(255, 216, 107, 0.4));
+}
+
+@keyframes cardSlotEnter {
+  0%   { opacity: 0; transform: scale(0.4); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.card-slot {
+  /* Regular grid item — placed via inline gridRow/gridColumn from React.
+     Holds a single .card-container that fills it. */
+  min-width: 0;
 }
 
 /* === Center cell + Topsi mascot === */
@@ -818,6 +925,59 @@
 
 .lobby-play-btn:active:not(:disabled) {
   transform: translateY(0) scale(0.99);
+}
+
+/* === Mode picker (Classic / Mega Duel) === */
+
+.lobby-mode-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.lobby-mode-btn {
+  background: var(--bg-primary);
+  border: 2px solid rgba(108, 99, 255, 0.2);
+  border-radius: 14px;
+  padding: 14px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--text-secondary);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 0.2s, background 0.2s, transform 0.1s, color 0.2s;
+}
+
+.lobby-mode-btn:hover {
+  border-color: rgba(108, 99, 255, 0.5);
+  color: var(--text-primary);
+}
+
+.lobby-mode-btn.is-active {
+  border-color: var(--accent);
+  background: linear-gradient(160deg, rgba(108, 99, 255, 0.18), rgba(108, 99, 255, 0.05));
+  color: var(--text-primary);
+  box-shadow: 0 0 24px rgba(108, 99, 255, 0.25);
+}
+
+.lobby-mode-btn.lobby-mode-mega.is-active {
+  border-color: #ffd86b;
+  background: linear-gradient(160deg, rgba(255, 216, 107, 0.16), rgba(255, 155, 210, 0.08));
+  box-shadow: 0 0 28px rgba(255, 216, 107, 0.35);
+}
+
+.lobby-mode-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.lobby-mode-desc {
+  font-size: 0.78rem;
+  line-height: 1.3;
+  opacity: 0.85;
 }
 
 /* === Theme preview strip — five magical worlds === */
@@ -2072,6 +2232,177 @@ button:disabled {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* === Mega Mode cinematic overlay =========================================
+   Full-screen interrupt shown for ~2.5s when a Mega Wave triggers. Reuses
+   the visual vocabulary of the existing VersusScreen (flash + speed lines
+   + comic title + sparks) but as an in-game power moment instead of an intro. */
+
+.mega-cinematic {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  animation: megaCineFade 2.7s ease-out forwards;
+}
+
+@keyframes megaCineFade {
+  0%   { opacity: 0; }
+  6%   { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.mega-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.65),
+    rgba(108, 99, 255, 0.35) 30%,
+    transparent 70%
+  );
+  animation: megaFlash 0.6s ease-out forwards;
+}
+
+.mega-cinematic.level-2 .mega-flash {
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.7),
+    rgba(255, 155, 210, 0.45) 30%,
+    transparent 70%
+  );
+}
+
+.mega-cinematic.level-3 .mega-flash,
+.mega-cinematic.is-final-duel .mega-flash {
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 216, 107, 0.6) 30%,
+    transparent 70%
+  );
+}
+
+@keyframes megaFlash {
+  0%   { opacity: 0; transform: scale(0.4); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+.mega-speed-lines {
+  position: absolute;
+  inset: 0;
+}
+
+.mega-speed-line {
+  --angle: 0deg;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 80vmax;
+  margin-left: -2px;
+  margin-top: -40vmax;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.8) 45%,
+    rgba(255, 255, 255, 0.8) 55%,
+    transparent 100%
+  );
+  transform: rotate(var(--angle));
+  transform-origin: center;
+  animation: megaSpeedLine 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes megaSpeedLine {
+  0%   { opacity: 0; transform: rotate(var(--angle)) scaleY(0.1); }
+  40%  { opacity: 1; transform: rotate(var(--angle)) scaleY(1); }
+  100% { opacity: 0; transform: rotate(var(--angle)) scaleY(1); }
+}
+
+.mega-title-wrap {
+  position: relative;
+  text-align: center;
+  z-index: 2;
+}
+
+.mega-title {
+  font-family: 'Fredoka', sans-serif;
+  font-size: clamp(3rem, 12vw, 9rem);
+  font-weight: 900;
+  letter-spacing: 6px;
+  background: linear-gradient(120deg, #ffd86b, #ff9bd2 30%, #6c63ff 60%, #48dbfb);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 60px rgba(108, 99, 255, 0.5);
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.6));
+  animation: megaTitleSlam 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.mega-cinematic.is-final-duel .mega-title {
+  background: linear-gradient(120deg, #ffd86b, #ff6b8a 50%, #ffd86b);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+@keyframes megaTitleSlam {
+  0%   { opacity: 0; transform: scale(2.5) rotateZ(-8deg); filter: blur(8px); }
+  60%  { opacity: 1; transform: scale(0.92) rotateZ(2deg); filter: blur(0); }
+  80%  { transform: scale(1.04) rotateZ(-1deg); }
+  100% { transform: scale(1) rotateZ(0deg); }
+}
+
+.mega-subtitle {
+  margin-top: 8px;
+  font-family: 'Fredoka', sans-serif;
+  font-size: clamp(1rem, 2.4vw, 1.4rem);
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 20px rgba(108, 99, 255, 0.8);
+  animation: megaSubtitleIn 0.5s ease-out 0.5s both;
+}
+
+@keyframes megaSubtitleIn {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.mega-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.mega-spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(255, 216, 107, 0.8) 40%,
+    transparent 70%
+  );
+  box-shadow: 0 0 12px rgba(255, 216, 107, 0.8);
+  opacity: 0;
+  animation: megaSpark var(--md, 0.7s) ease-out 0.4s forwards;
+}
+
+@keyframes megaSpark {
+  0%   { opacity: 0; transform: translate(0, 0) scale(0.4); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--mx, 0), var(--my, 0)) scale(0.2); }
 }
 
 /* === Reduced motion =====================================================

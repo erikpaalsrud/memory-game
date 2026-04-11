@@ -12,19 +12,25 @@ interface Props {
 export function Card({ card, category, onClick, disabled, imageExtension, justMatched }: Props) {
   const isRevealed = card.state === 'face-up' || card.state === 'matched';
   const ext = imageExtension;
+  const isMegaPair = card.isMegaPair === true;
 
   const classes = [
     'card-container',
     card.state,
     disabled ? 'disabled' : '',
     justMatched ? 'just-matched' : '',
+    isMegaPair ? 'is-mega-pair' : '',
   ]
     .filter(Boolean)
     .join(' ');
 
   // Cards live under per-category folders. The card-back is shared across categories.
+  // Mega Pair cards use the category cover image (which has its own _cover.png path)
+  // and get a golden frame via CSS to read as the special "hunt" pair.
   const faceSrc = card.imageId && category
-    ? `/cards/${category}/${card.imageId}.${ext}`
+    ? card.imageId === '_cover'
+      ? `/cards/${category}/_cover.png`
+      : `/cards/${category}/${card.imageId}.${ext}`
     : null;
 
   return (

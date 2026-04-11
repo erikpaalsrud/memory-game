@@ -38,6 +38,18 @@ const en: Dict = {
   'lobby.spectate.button': 'Watch',
   'lobby.themes.label': 'Six magical worlds await',
   'lobby.rules.heading': '👇 Tap the cards to learn the rules',
+  'lobby.mode.heading': 'Battle Mode',
+  'lobby.mode.classic': 'Classic',
+  'lobby.mode.classic.desc': 'Standard 5×5 — first to win the most pairs',
+  'lobby.mode.mega': '⚡ Mega Duel',
+  'lobby.mode.mega.desc': 'Grid grows on every 3-streak. Score multipliers. Final Duel.',
+
+  // Mega Mode in-game UI
+  'mega.wave.banner.title': 'MEGA WAVE',
+  'mega.wave.unlock.subtitle': '{name} unlocked Wave {level}!',
+  'mega.wave.final.title': 'FINAL DUEL',
+  'mega.wave.final.subtitle': 'Find the MEGA PAIR to win!',
+  'mega.multiplier': '×{n}',
 
   // Waiting room
   'waiting.title': 'Searching for opponent...',
@@ -121,6 +133,17 @@ const no: Dict = {
   'lobby.spectate.button': 'Se',
   'lobby.themes.label': 'Seks magiske verdener venter',
   'lobby.rules.heading': '👇 Vend kortene for å lære reglene',
+  'lobby.mode.heading': 'Kampmodus',
+  'lobby.mode.classic': 'Klassisk',
+  'lobby.mode.classic.desc': 'Vanlig 5×5 — flest par vinner',
+  'lobby.mode.mega': '⚡ Megaduell',
+  'lobby.mode.mega.desc': 'Brettet vokser ved 3 på rad. Poengmultiplikatorer. Sluttduell.',
+
+  'mega.wave.banner.title': 'MEGABØLGE',
+  'mega.wave.unlock.subtitle': '{name} låste opp bølge {level}!',
+  'mega.wave.final.title': 'SLUTTDUELL',
+  'mega.wave.final.subtitle': 'Finn MEGAPARET for å vinne!',
+  'mega.multiplier': '×{n}',
 
   'waiting.title': 'Leter etter en motstander...',
   'waiting.subtitle': 'Venter på at en annen spiller blir med',

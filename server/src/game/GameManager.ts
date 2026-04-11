@@ -5,10 +5,15 @@ import {
   CATEGORY_IDS,
   TOTAL_PAIRS,
   type CategoryId,
+  type GameMode,
 } from 'memory-game-shared';
 
+interface QueuedPlayerWithMode extends QueuedPlayer {
+  mode: GameMode;
+}
+
 export class GameManager {
-  private queue: QueuedPlayer[] = [];
+  private queue: QueuedPlayerWithMode[] = [];
   private games = new Map<string, GameInstance>();
   private playerToGame = new Map<string, string>();
   private categoryPools: CategoryPools;
@@ -19,16 +24,19 @@ export class GameManager {
     console.log(`Image pools: ${summary} (${CARD_IMAGE_EXTENSION})`);
   }
 
-  addToQueue(socketId: string, name: string): GameInstance | null {
+  addToQueue(socketId: string, name: string, mode: GameMode = 'classic'): GameInstance | null {
     if (this.playerToGame.has(socketId)) return null;
     if (this.queue.find((p) => p.socketId === socketId)) return null;
 
-    this.queue.push({ socketId, name });
+    this.queue.push({ socketId, name, mode });
 
     if (this.queue.length >= 2) {
       const p1 = this.queue.shift()!;
       const p2 = this.queue.shift()!;
-      return this.createGame(p1, p2);
+      // Mode resolution: if both pick the same, use it. If they differ, the
+      // first player in queue (p1) wins — they were waiting longer.
+      const resolvedMode: GameMode = p1.mode === p2.mode ? p1.mode : p1.mode;
+      return this.createGame(p1, p2, resolvedMode);
     }
 
     return null;
@@ -38,13 +46,13 @@ export class GameManager {
     this.queue = this.queue.filter((p) => p.socketId !== socketId);
   }
 
-  private createGame(p1: QueuedPlayer, p2: QueuedPlayer): GameInstance {
+  private createGame(p1: QueuedPlayer, p2: QueuedPlayer, mode: GameMode = 'classic'): GameInstance {
     const gameId = uuid();
-    const game = new GameInstance(gameId, p1, p2, CARD_IMAGE_EXTENSION);
+    const game = new GameInstance(gameId, p1, p2, CARD_IMAGE_EXTENSION, mode);
     this.games.set(gameId, game);
     this.playerToGame.set(p1.socketId, gameId);
     this.playerToGame.set(p2.socketId, gameId);
-    console.log(`Game created: ${gameId} — ${p1.name} vs ${p2.name} (selector=${game.categorySelectorId})`);
+    console.log(`Game created: ${gameId} — ${p1.name} vs ${p2.name} mode=${mode} selector=${game.categorySelectorId}`);
     return game;
   }
 
@@ -74,11 +82,12 @@ export class GameManager {
   createRematch(oldGame: GameInstance): GameInstance {
     const p1: QueuedPlayer = { socketId: oldGame.players[0].id, name: oldGame.players[0].name };
     const p2: QueuedPlayer = { socketId: oldGame.players[1].id, name: oldGame.players[1].name };
+    const mode = oldGame.mode;
 
     // Clean up old game
     this.removeGame(oldGame.gameId);
 
-    return this.createGame(p1, p2);
+    return this.createGame(p1, p2, mode);
   }
 
   getGameBySpectateCode(code: string): GameInstance | undefined {

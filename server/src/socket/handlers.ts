@@ -51,11 +51,23 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
     });
   }
 
+  /**
+   * If the player whose turn it currently is is trailing by enough, send them
+   * a Topsi's Peek revealing one face-down card. This is a private emit (only
+   * the trailing player sees it). Spectators and the leading player do not.
+   */
+  function maybeIssuePeek(io: TypedServer, game: GameInstance) {
+    const turnPlayerId = game.currentTurnPlayerId;
+    const peek = game.getPeekForPlayer(turnPlayerId);
+    if (!peek) return;
+    io.sockets.sockets.get(turnPlayerId)?.emit('game:topsi-peek', peek);
+  }
+
   io.on('connection', (socket: TypedSocket) => {
     console.log(`Connected: ${socket.id}`);
 
     // --- MATCHMAKING ---
-    socket.on('player:join', ({ playerName }) => {
+    socket.on('player:join', ({ playerName, mode }) => {
       if (!playerName || typeof playerName !== 'string') {
         socket.emit('game:error', { message: 'Invalid player name' });
         return;
@@ -67,7 +79,8 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
         return;
       }
 
-      const game = gameManager.addToQueue(socket.id, name);
+      const resolvedMode = mode === 'mega' || mode === 'classic' ? mode : 'classic';
+      const game = gameManager.addToQueue(socket.id, name, resolvedMode);
 
       if (!game) {
         socket.emit('game:waiting');
@@ -127,10 +140,37 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
           io.to(roomName).emit('game:pair-matched', {
             cardIds: result.matchedCardIds,
             playerId: result.playerId,
+            pointsAwarded: result.pointsAwarded,
           });
           io.to(roomName).emit('game:state-update', {
             gameState: game.toClientState(),
           });
+          break;
+
+        case 'match-and-mega-trigger':
+          // Match scored AND a Mega Wave just triggered. Send the regular match
+          // events first so the visuals settle, then fire the mega event with
+          // the new state (expanded grid + new face-down cards) for the cinematic.
+          io.to(roomName).emit('game:card-flipped', {
+            cardId: result.cardId,
+            imageId: result.imageId,
+            label: result.label,
+          });
+          io.to(roomName).emit('game:pair-matched', {
+            cardIds: result.matchedCardIds,
+            playerId: result.playerId,
+            pointsAwarded: result.pointsAwarded,
+          });
+          // Small delay so the match-glow animation gets to play before the
+          // Mega Wave cinematic kicks in.
+          setTimeout(() => {
+            io.to(roomName).emit('game:mega-triggered', {
+              gameState: game.toClientState(),
+              triggeringPlayerId: result.playerId,
+              megaLevel: result.newMegaLevel,
+              addedCardIds: result.addedCardIds,
+            });
+          }, 800);
           break;
 
         case 'match-enter-sudden-death':
@@ -143,6 +183,7 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
           io.to(roomName).emit('game:pair-matched', {
             cardIds: result.matchedCardIds,
             playerId: result.playerId,
+            pointsAwarded: result.pointsAwarded,
           });
           // Delay so the last match swoosh plays before sudden death takes over
           setTimeout(() => {
@@ -163,6 +204,7 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
           io.to(roomName).emit('game:pair-matched', {
             cardIds: result.matchedCardIds,
             playerId: result.playerId,
+            pointsAwarded: result.pointsAwarded,
           });
           io.to(roomName).emit('game:over', {
             gameState: game.toClientState(),
@@ -187,6 +229,8 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
             io.to(roomName).emit('game:state-update', {
               gameState: game.toClientState(),
             });
+            // Topsi's Peek for the trailing player on their fresh turn
+            maybeIssuePeek(io, game);
           }, CARD_FLIP_DELAY_MS);
           break;
       }
@@ -195,10 +239,19 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
     // --- REMATCH ---
     socket.on('player:rematch', () => {
       const game = gameManager.getGameForPlayer(socket.id);
-      if (!game || game.phase !== 'finished') return;
+      console.log(`[rematch] received from ${socket.id} — game=${game?.gameId} phase=${game?.phase} requests=${game?.rematchRequests.size}`);
+      if (!game) {
+        console.log(`[rematch] REJECTED: no game for player ${socket.id}`);
+        return;
+      }
+      if (game.phase !== 'finished') {
+        console.log(`[rematch] REJECTED: game phase is ${game.phase}, not finished`);
+        return;
+      }
 
       const wasNew = !game.rematchRequests.has(socket.id);
       game.rematchRequests.add(socket.id);
+      console.log(`[rematch] ${socket.id} added — wasNew=${wasNew} now size=${game.rematchRequests.size}`);
 
       // If only one player requested, tell them to wait AND tell the other
       // player that a rematch was requested so they can accept.
@@ -214,12 +267,15 @@ export function setupSocketHandlers(io: TypedServer, gameManager: GameManager): 
       }
 
       // Both players want a rematch — create new game and re-enter category selection
+      console.log(`[rematch] BOTH READY — creating new game from ${game.gameId}`);
       const oldRoom = `game:${game.gameId}`;
       const newGame = gameManager.createRematch(game);
+      console.log(`[rematch] new game ${newGame.gameId} created, broadcasting category-selecting`);
 
       const [p1, p2] = newGame.players;
       const p1Socket = io.sockets.sockets.get(p1.id);
       const p2Socket = io.sockets.sockets.get(p2.id);
+      console.log(`[rematch] p1Socket=${!!p1Socket} p2Socket=${!!p2Socket}`);
 
       // Leave old room
       p1Socket?.leave(oldRoom);

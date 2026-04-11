@@ -1,10 +1,13 @@
 import { Card } from './Card';
 import { ScoreBoard } from './ScoreBoard';
 import { Topsi } from './Topsi';
-import { GRID_COLS, GRID_CELLS, CENTER_CELL } from 'memory-game-shared';
 import type { ClientGameState } from 'memory-game-shared';
 import type { SuddenDeathPhase } from '../hooks/useGame';
 import { useTranslation } from '../i18n/LanguageContext';
+
+// Topsi anchor — must match server's TOPSI_ROW / TOPSI_COL in GameInstance.ts
+const TOPSI_ROW = 2;
+const TOPSI_COL = 2;
 
 interface Props {
   gameState: ClientGameState;
@@ -46,6 +49,7 @@ export function GameBoard({
           players={gameState.players}
           currentTurnPlayerId={gameState.currentTurnPlayerId}
           myPlayerId={myPlayerId}
+          scoreMultipliers={gameState.scoreMultipliers}
         />
         <div className="sd-overlay">
           <h2 className="sd-title">{t('sd.title')}</h2>
@@ -78,6 +82,7 @@ export function GameBoard({
           players={gameState.players}
           currentTurnPlayerId={gameState.currentTurnPlayerId}
           myPlayerId={myPlayerId}
+          scoreMultipliers={gameState.scoreMultipliers}
         />
         <div className="sd-overlay">
           <div className="coin-toss">
@@ -114,6 +119,7 @@ export function GameBoard({
           players={gameState.players}
           currentTurnPlayerId={gameState.currentTurnPlayerId}
           myPlayerId={myPlayerId}
+          scoreMultipliers={gameState.scoreMultipliers}
         />
 
         <div className={`turn-indicator ${turnClass}`}>{turnText}</div>
@@ -160,39 +166,9 @@ export function GameBoard({
     turnText = t('game.turn.opponent');
   }
 
-  // Build 5x5 grid cells with center empty
-  const gridCells = [];
-  let cardIndex = 0;
-  for (let i = 0; i < GRID_CELLS; i++) {
-    if (i === CENTER_CELL) {
-      gridCells.push(
-        <div key="center" className="center-cell">
-          <Topsi
-            gameState={gameState}
-            myPlayerId={myPlayerId}
-            isMyTurn={isMyTurn}
-            matchedCardIds={matchedCardIds}
-            stillYourTurn={stillYourTurn}
-            suddenDeath={suddenDeathPhase !== null}
-          />
-        </div>
-      );
-    } else {
-      const card = gameState.cards[cardIndex];
-      gridCells.push(
-        <Card
-          key={card.id}
-          card={card}
-          category={gameState.category}
-          onClick={() => onFlipCard(card.id)}
-          disabled={!canInteract || card.state !== 'face-down'}
-          imageExtension={imageExtension}
-          justMatched={matchedCardIds.includes(card.id)}
-        />
-      );
-      cardIndex++;
-    }
-  }
+  // Render every card via explicit (row, col) on the CSS grid. Topsi sits at the
+  // fixed anchor (TOPSI_ROW, TOPSI_COL). Grid size is dynamic — Mega Mode grows it.
+  const gridSize = gameState.gridSize;
 
   return (
     <div className="game-container">
@@ -208,10 +184,43 @@ export function GameBoard({
 
       <div className="game-board-wrapper">
         <div
-          className="game-board"
-          style={{ gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)` }}
+          className={`game-board ${gameState.mode === 'mega' ? 'is-mega' : ''} ${gameState.finalDuel ? 'is-final-duel' : ''}`}
+          style={{
+            gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
+            gridTemplateRows: `repeat(${gridSize}, 1fr)`,
+            ['--grid-size' as string]: gridSize,
+          } as React.CSSProperties}
         >
-          {gridCells}
+          <div
+            key="center"
+            className="center-cell"
+            style={{ gridRow: TOPSI_ROW + 1, gridColumn: TOPSI_COL + 1 }}
+          >
+            <Topsi
+              gameState={gameState}
+              myPlayerId={myPlayerId}
+              isMyTurn={isMyTurn}
+              matchedCardIds={matchedCardIds}
+              stillYourTurn={stillYourTurn}
+              suddenDeath={suddenDeathPhase !== null}
+            />
+          </div>
+          {gameState.cards.map((card) => (
+            <div
+              key={card.id}
+              className="card-slot"
+              style={{ gridRow: card.row + 1, gridColumn: card.col + 1 }}
+            >
+              <Card
+                card={card}
+                category={gameState.category}
+                onClick={() => onFlipCard(card.id)}
+                disabled={!canInteract || card.state !== 'face-down'}
+                imageExtension={imageExtension}
+                justMatched={matchedCardIds.includes(card.id)}
+              />
+            </div>
+          ))}
         </div>
       </div>
 
